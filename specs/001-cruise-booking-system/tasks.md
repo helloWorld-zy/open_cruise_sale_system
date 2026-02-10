@@ -11,8 +11,8 @@
 
 | Phase | User Story | Priority | Tasks | Independent Test |
 |-------|-----------|----------|-------|------------------|
-| 1 | Setup | - | 8 | Project initialized, all dependencies installed |
-| 2 | Foundational | - | 12 | Infrastructure ready for all user stories |
+| 1 | Setup | - | 20/20 ✓ | Project initialized, all dependencies installed |
+| 2 | Foundational | - | 16/16 ✓ | Infrastructure ready for all user stories |
 | 3 | US1: Cruise Browsing | P1 | 18 | User can browse cruises and cabins without login |
 | 4 | US4: Backend Management | P1 | 16 | Admin can manage all cruise data |
 | 5 | US2: Booking & Payment | P1 | 22 | Complete booking flow with payment |
@@ -33,32 +33,32 @@
 
 ### Backend Setup
 
-- [ ] T001 [P] Initialize Go project structure in `backend/` with go.mod
-- [ ] T002 [P] Install Gin v1.11.0, GORM v2.x and configure router in `backend/cmd/api/main.go`
-- [ ] T003 [P] Setup PostgreSQL 17 connection with GORM in `backend/internal/database/db.go`
-- [ ] T004 [P] Setup Redis 7.4 client in `backend/internal/cache/redis.go`
-- [ ] T005 [P] Configure MinIO S3 client in `backend/internal/storage/minio.go`
-- [ ] T006 [P] Setup NATS JetStream connection in `backend/internal/messaging/nats.go`
-- [ ] T007 Create environment configuration with Viper in `backend/internal/config/config.go`
-- [ ] T008 Setup structured logging with Zap in `backend/internal/logger/logger.go`
+- [x] T001 [P] Initialize Go project structure in `backend/` with go.mod
+- [x] T002 [P] Install Gin v1.11.0, GORM v2.x and configure router in `backend/cmd/api/main.go`
+- [x] T003 [P] Setup PostgreSQL 17 connection with GORM in `backend/internal/database/db.go`
+- [x] T004 [P] Setup Redis 7.4 client in `backend/internal/cache/redis.go`
+- [x] T005 [P] Configure MinIO S3 client in `backend/internal/storage/minio.go`
+- [x] T006 [P] Setup NATS JetStream connection in `backend/internal/messaging/nats.go`
+- [x] T007 Create environment configuration with Viper in `backend/internal/config/config.go`
+- [x] T008 Setup structured logging with Zap in `backend/internal/logger/logger.go`
 
 ### Frontend Setup
 
-- [ ] T009 [P] Initialize Nuxt 4.3.0 project in `frontend-admin/` with TypeScript 5.9
-- [ ] T010 [P] Initialize Nuxt 4.3.0 SSR project in `frontend-web/` with TypeScript 5.9
-- [ ] T011 [P] Initialize uni-app Vue 3 project in `frontend-mini/` with TypeScript
-- [ ] T012 Install and configure Tailwind CSS v4, Nuxt UI v3 in both Nuxt projects
-- [ ] T013 Install Pinia v3 in all frontend projects
-- [ ] T014 Setup Vitest + Vue Test Utils in Nuxt projects
-- [ ] T015 Setup Jest + @vue/test-utils in uni-app project
-- [ ] T016 Create shared types package in `shared/types/` for cross-project use
+- [x] T009 [P] Initialize Nuxt 4.3.0 project in `frontend-admin/` with TypeScript 5.9
+- [x] T010 [P] Initialize Nuxt 4.3.0 SSR project in `frontend-web/` with TypeScript 5.9
+- [x] T011 [P] Initialize uni-app Vue 3 project in `frontend-mini/` with TypeScript
+- [x] T012 Install and configure Tailwind CSS v4, Nuxt UI v3 in both Nuxt projects
+- [x] T013 Install Pinia v3 in all frontend projects
+- [x] T014 Setup Vitest + Vue Test Utils in Nuxt projects
+- [x] T015 Setup Jest + @vue/test-utils in uni-app project
+- [x] T016 Create shared types package in `shared/types/` for cross-project use
 
 ### DevOps Setup
 
-- [ ] T017 Create `docker-compose.yml` with PostgreSQL, Redis, Meilisearch, MinIO, NATS
-- [ ] T018 Create GitHub Actions CI workflow in `.github/workflows/ci.yml`
-- [ ] T019 Create `.env.example` files for all projects
-- [ ] T020 Setup Swagger generation config in `backend/`
+- [x] T017 Create `docker-compose.yml` with PostgreSQL, Redis, Meilisearch, MinIO, NATS
+- [x] T018 Create GitHub Actions CI workflow in `.github/workflows/ci.yml`
+- [x] T019 Create `.env.example` files for all projects
+- [x] T020 Setup Swagger generation config in `backend/`
 
 ---
 
@@ -70,29 +70,29 @@
 
 ### Authentication & Authorization
 
-- [ ] T021 Implement JWT middleware in `backend/internal/middleware/jwt.go`
-- [ ] T022 Setup Casbin RBAC with policy model in `backend/internal/auth/rbac.go`
-- [ ] T023 Create role definitions (Super Admin, Operations, Finance, Customer Service)
-- [ ] T024 Implement password hashing utilities in `backend/internal/auth/hash.go`
-- [ ] T025 Create auth handlers in `backend/internal/handler/auth.go`
+- [x] T021 Implement JWT middleware in `backend/internal/middleware/jwt.go`
+- [x] T022 Setup Casbin RBAC with policy model in `backend/internal/auth/rbac.go`
+- [x] T023 Create role definitions (Super Admin, Operations, Finance, Customer Service)
+- [x] T024 Implement password hashing utilities in `backend/internal/auth/role.go`
+- [x] T025 Create auth handlers in `backend/internal/handler/auth.go`
 
 ### Common Infrastructure
 
-- [ ] T026 Create base model with soft delete in `backend/internal/domain/base.go`
-- [ ] T027 Implement pagination utilities in `backend/internal/pagination/pagination.go`
-- [ ] T028 Create API response wrapper in `backend/internal/response/response.go`
-- [ ] T029 Implement error handling middleware in `backend/internal/middleware/error.go`
-- [ ] T030 Create request logging middleware in `backend/internal/middleware/logger.go`
-- [ ] T031 Implement CORS middleware in `backend/internal/middleware/cors.go`
-- [ ] T032 Create request validation utilities in `backend/internal/validator/validator.go`
+- [x] T026 Create base model with soft delete in `backend/internal/domain/base.go`
+- [x] T027 Implement pagination utilities in `backend/internal/pagination/pagination.go`
+- [x] T028 Create API response wrapper in `backend/internal/response/response.go`
+- [x] T029 Implement error handling middleware in `backend/internal/middleware/error.go`
+- [x] T030 Create request logging middleware in `backend/internal/middleware/logger.go`
+- [x] T031 Implement CORS middleware in `backend/internal/middleware/cors.go`
+- [x] T032 Create request validation utilities in `backend/internal/validator/validator.go`
 
 ### Shared Frontend Components
 
-- [ ] T033 Create authentication store with Pinia in `frontend-admin/stores/auth.ts`
-- [ ] T034 Create base API client with ofetch in `frontend-admin/utils/api.ts`
-- [ ] T035 Implement base layout components (Header, Sidebar, Footer)
-- [ ] T036 Create common UI components (Loading, Error, Empty states)
-- [ ] T037 Setup route guards for authentication in `frontend-admin/middleware/auth.ts`
+- [x] T033 Create authentication store with Pinia in `frontend-admin/stores/auth.ts`
+- [x] T034 Create base API client with ofetch in `frontend-admin/utils/api.ts`
+- [x] T035 Implement base layout components (Header, Sidebar, Footer)
+- [x] T036 Create common UI components (Loading, Error, Empty states)
+- [x] T037 Setup route guards for authentication in `frontend-admin/middleware/auth.ts`
 
 ---
 
