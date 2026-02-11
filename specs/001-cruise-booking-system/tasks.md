@@ -14,7 +14,7 @@
 | 1 | Setup | - | ✅ **Complete** | 20/20 (100%) |
 | 2 | Foundational | - | ✅ **Complete** | 16/16 (100%) |
 | 3 | US1: Cruise Browsing | P1 | ✅ **Complete** | 20/20 (100%) |
-| 4 | US4: Backend Management | P1 | ⏳ Pending | 0/16 (0%) |
+| 4 | US4: Backend Management | P1 | ✅ **Complete** | 16/16 (100%) |
 | 5 | US2: Booking & Payment | P1 | ⏳ Pending | 0/22 (0%) |
 | 6 | US3: Order Management | P1 | ⏳ Pending | 0/14 (0%) |
 | 7 | US5: User Auth | P2 | ⏳ Pending | 0/12 (0%) |
@@ -23,13 +23,13 @@
 | 10 | US8: Social Features | P3 | ⏳ Pending | 0/10 (0%) |
 | 11 | Polish | - | ⏳ Pending | 0/8 (0%) |
 
-**Total Progress**: 56/206 (27.2%)
+**Total Progress**: 72/206 (35.0%)
 
-### Phase 1-3 Completion Summary
+### Phase 1-4 Completion Summary
 
 **Phase 1: Setup** ✅
 - Backend infrastructure: 8/8 tasks
-- Frontend projects: 8/8 tasks  
+- Frontend projects: 8/8 tasks
 - DevOps: 4/4 tasks
 
 **Phase 2: Foundational** ✅
@@ -54,7 +54,23 @@
   - Components: 1/1
   - Tests: 1/1
 
-**Next**: Phase 4 - Backend Management (Admin Panel)
+**Phase 4: US4 - Backend Management** ✅
+- ✅ **Backend APIs** (6/6 tasks)
+  - Admin CRUD handlers for cruises, cabin types, facilities
+  - MinIO file upload service
+  - Admin routes with RBAC protection
+  - Handler tests
+- ✅ **Frontend Admin Panel** (10/10 tasks)
+  - Admin layout with sidebar navigation
+  - Login page
+  - Cruise management (list, create/edit)
+  - Image upload component with drag-drop
+  - Cabin type management
+  - Facility management
+  - Component tests (Vitest)
+  - E2E tests (Playwright)
+
+**Next**: Phase 5 - Online Booking & Payment
 
 ---
 
@@ -65,7 +81,7 @@
 | 1 | Setup | - | 20/20 ✓ | Project initialized, all dependencies installed |
 | 2 | Foundational | - | 16/16 ✓ | Infrastructure ready for all user stories |
 | 3 | US1: Cruise Browsing | P1 | 20/20 ✓ | User can browse cruises and cabins without login |
-| 4 | US4: Backend Management | P1 | 16 | Admin can manage all cruise data |
+| 4 | US4: Backend Management | P1 | 16/16 ✓ | Admin can manage all cruise data |
 | 5 | US2: Booking & Payment | P1 | 22 | Complete booking flow with payment |
 | 6 | US3: Order Management | P1 | 14 | Orders and refunds fully functional |
 | 7 | US5: User Auth | P2 | 12 | Multi-platform login working |
@@ -209,25 +225,25 @@
 
 ### Backend - Admin APIs
 
-- [ ] T071 Implement Cruise CRUD handlers with image upload in `backend/internal/handler/admin_cruise.go`
-- [ ] T072 Implement CabinType CRUD handlers in `backend/internal/handler/admin_cabin_type.go`
-- [ ] T073 Implement Facility CRUD handlers in `backend/internal/handler/admin_facility.go`
-- [ ] T074 Implement MinIO file upload service in `backend/internal/service/storage.go`
-- [ ] T075 Setup admin routes with RBAC in `backend/cmd/api/admin_routes.go`
-- [ ] T076 Write admin handler tests (100% coverage)
+- [x] T071 Implement Cruise CRUD handlers with image upload in `backend/internal/handler/admin_cruise.go`
+- [x] T072 Implement CabinType CRUD handlers in `backend/internal/handler/admin_cabin_type.go`
+- [x] T073 Implement Facility CRUD handlers in `backend/internal/handler/admin_facility.go`
+- [x] T074 Implement MinIO file upload service in `backend/internal/service/storage.go`
+- [x] T075 Setup admin routes with RBAC in `backend/cmd/api/admin_routes.go`
+- [x] T076 Write admin handler tests (100% coverage)
 
 ### Frontend - Admin Panel
 
-- [ ] T077 Create AdminLayout with sidebar navigation in `frontend-admin/layouts/admin.vue`
-- [ ] T078 Create Login page in `frontend-admin/pages/login.vue`
-- [ ] T079 Create Cruise list page in `frontend-admin/pages/cruises/index.vue`
-- [ ] T080 Create Cruise create/edit form in `frontend-admin/pages/cruises/[id].vue`
-- [ ] T081 Integrate TipTap editor in `frontend-admin/components/TipTapEditor.vue`
-- [ ] T082 Create image upload component with drag-drop in `frontend-admin/components/ImageUpload.vue`
-- [ ] T083 Create CabinType management pages in `frontend-admin/pages/cabin-types/`
-- [ ] T084 Create Facility management pages in `frontend-admin/pages/facilities/`
-- [ ] T085 Write Vitest tests for admin components (100% coverage)
-- [ ] T086 Write Playwright E2E tests for admin flows (100% coverage)
+- [x] T077 Create AdminLayout with sidebar navigation in `frontend-admin/layouts/admin.vue`
+- [x] T078 Create Login page in `frontend-admin/pages/login.vue`
+- [x] T079 Create Cruise list page in `frontend-admin/pages/cruises/index.vue`
+- [x] T080 Create Cruise create/edit form in `frontend-admin/pages/cruises/[id].vue`
+- [x] T081 Integrate TipTap editor in `frontend-admin/components/TipTapEditor.vue`
+- [x] T082 Create image upload component with drag-drop in `frontend-admin/components/ImageUpload.vue`
+- [x] T083 Create CabinType management pages in `frontend-admin/pages/cabin-types/`
+- [x] T084 Create Facility management pages in `frontend-admin/pages/facilities/`
+- [x] T085 Write Vitest tests for admin components (100% coverage)
+- [x] T086 Write Playwright E2E tests for admin flows (100% coverage)
 
 ---
 

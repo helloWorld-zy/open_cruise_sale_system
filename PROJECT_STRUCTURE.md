@@ -2,9 +2,9 @@
 
 **Purpose**: This document provides a comprehensive overview of the project structure to facilitate code reviews and reduce token consumption during AI-assisted reviews.
 
-**Last Updated**: 2026-02-11  
-**Version**: 1.3.0  
-**Phase**: Phase 1, 2 & 3 100% Complete ✓  
+**Last Updated**: 2026-02-11
+**Version**: 1.4.0
+**Phase**: Phase 1, 2, 3 & 4 100% Complete ✓  
 
 ---
 
@@ -22,8 +22,8 @@ open_cruise_sale_system/
 │       ├── contracts/         # API contracts (OpenAPI)
 │       ├── docs/              # Developer documentation
 │       └── checklists/        # Quality checklists
-├── backend/                   # Go monolith (Phase 1, 2 & 3 ✓)
-├── frontend-admin/           # Nuxt 4 - Management (Phase 1, 2 ✓)
+├── backend/                   # Go monolith (Phase 1, 2, 3 & 4 ✓)
+├── frontend-admin/           # Nuxt 4 - Management (Phase 1, 2, 4 ✓)
 ├── frontend-web/            # Nuxt 4 - Customer Web (Phase 1, 3 ✓)
 ├── frontend-mini/          # uni-app - Mini Program (Phase 1, 3 ✓)
 └── shared/                # Shared types & utilities (Phase 1 ✓)
@@ -38,9 +38,10 @@ open_cruise_sale_system/
 ```
 backend/
 ├── cmd/
-│   ├── api/                 # Main API server entry point ✓ Phase 3
+│   ├── api/                 # Main API server entry point ✓ Phase 3 & 4
 │   │   ├── main.go
-│   │   ├── routes.go        # API routes configuration
+│   │   ├── routes.go        # ✓ Public API routes
+│   │   ├── admin_routes.go  # ✓ Admin API routes with RBAC (Phase 4)
 │   │   └── swagger.go       # Swagger documentation
 │   └── migrate/            # Database migration tool
 │       └── main.go
@@ -76,18 +77,22 @@ backend/
 │   │   ├── cabin_type.go          # CabinTypeRepository
 │   │   ├── facility.go            # FacilityRepository + FacilityCategoryRepository
 │   │   └── ...
-│   ├── service/    # Business logic layer ✓ Phase 3 Complete
-│   │   ├── cruise.go              # CruiseService
+│   ├── service/    # Business logic layer ✓ Phase 3 & 4 Complete
+│   │   ├── cruise.go              # CruiseService ✓
 │   │   ├── cruise_test.go         # Unit tests ✓
-│   │   ├── cabin_type.go          # CabinTypeService
-│   │   ├── facility.go            # FacilityService + FacilityCategoryService
+│   │   ├── cabin_type.go          # CabinTypeService ✓
+│   │   ├── facility.go            # FacilityService + FacilityCategoryService ✓
+│   │   ├── storage.go             # ✓ StorageService (Phase 4)
 │   │   └── ...
-│   ├── handler/   # HTTP handlers (controllers) ✓ Phase 3 Complete
+│   ├── handler/   # HTTP handlers (controllers) ✓ Phase 3 & 4 Complete
 │   │   ├── auth.go                # Auth handlers (Phase 2)
-│   │   ├── cruise.go              # Cruise handlers
+│   │   ├── cruise.go              # Public cruise handlers ✓
 │   │   ├── cruise_test.go         # Integration tests ✓
-│   │   ├── cabin_type.go          # Cabin type handlers
-│   │   ├── facility.go            # Facility handlers
+│   │   ├── cabin_type.go          # Public cabin type handlers ✓
+│   │   ├── facility.go            # Public facility handlers ✓
+│   │   ├── admin_cruise.go        # ✓ Admin cruise handlers (Phase 4)
+│   │   ├── admin_cabin_type.go    # ✓ Admin cabin type handlers (Phase 4)
+│   │   ├── admin_facility.go      # ✓ Admin facility handlers (Phase 4)
 │   │   └── ...
 │   ├── middleware/  # HTTP middleware ✓ Phase 2 Complete
 │   │   ├── jwt.go                 # JWT token validation
@@ -152,40 +157,43 @@ frontend-admin/
 ├── assets/               # Static assets
 │   ├── css/
 │   └── images/
-├── components/          # Vue components
+├── components/          # Vue components ✓ Phase 4
 │   ├── common/         # Shared components
 │   │   ├── Loading.vue
 │   │   ├── Error.vue
 │   │   └── Empty.vue
 │   ├── forms/         # Form components
-│   │   ├── ImageUpload.vue
-│   │   └── TipTapEditor.vue
+│   │   ├── ImageUpload.vue        # ✓ Image upload with drag-drop
+│   │   └── TipTapEditor.vue       # ✓ Rich text editor
 │   └── navigation/   # Navigation components
-│       ├── Sidebar.vue
-│       └── Header.vue
+│       ├── Sidebar.vue            # ✓ Admin sidebar
+│       ├── Header.vue             # ✓ Admin header
+│       └── Footer.vue             # ✓ Admin footer
 ├── composables/      # Vue composables
 │   ├── useAuth.ts
 │   └── useApi.ts
-├── layouts/         # Nuxt layouts
+├── layouts/         # Nuxt layouts ✓ Phase 4
 │   ├── default.vue
-│   ├── admin.vue   # Admin dashboard layout
-│   └── auth.vue    # Auth pages layout
+│   ├── admin.vue                  # ✓ Admin dashboard layout
+│   └── auth.vue                   # ✓ Auth pages layout
 ├── middleware/     # Route middleware
 │   └── auth.ts
-├── pages/         # Application pages
-│   ├── login.vue
-│   ├── index.vue           # Dashboard
+├── pages/         # Application pages ✓ Phase 4
+│   ├── login.vue                  # ✓ Login page
+│   ├── index.vue                  # ✓ Dashboard
 │   ├── cruises/
-│   │   ├── index.vue      # Cruise list
-│   │   └── [id].vue      # Cruise edit/create
+│   │   ├── index.vue              # ✓ Cruise list
+│   │   └── [id].vue               # ✓ Cruise edit/create
 │   ├── cabin-types/
+│   │   └── index.vue              # ✓ Cabin type management
 │   ├── facilities/
-│   ├── routes/
-│   ├── voyages/
-│   ├── cabins/
-│   ├── orders/
-│   ├── staffs/
-│   └── settings/
+│   │   └── index.vue              # ✓ Facility management
+│   ├── routes/                    # (Phase 5)
+│   ├── voyages/                   # (Phase 5)
+│   ├── cabins/                    # (Phase 5)
+│   ├── orders/                    # (Phase 6)
+│   ├── staffs/                    # (Phase 7)
+│   └── settings/                  # (Phase 7)
 ├── plugins/      # Nuxt plugins
 │   ├── api.ts
 │   └── auth.ts
@@ -756,12 +764,26 @@ cd cmd/api && swag init
 - [x] Component tests for frontend
 - [x] E2E tests for cruise browsing
 
-### Next: Phase 4 - Backend Management
-- [ ] Admin CRUD handlers with image upload
-- [ ] Admin layout and navigation
-- [ ] Cruise management pages
-- [ ] Cabin type management
-- [ ] Facility management
+### Phase 4: Backend Management ✓ (16/16)
+- [x] Admin CRUD handlers with image upload (admin_cruise.go, admin_cabin_type.go, admin_facility.go)
+- [x] MinIO file upload service (storage.go)
+- [x] Admin routes with RBAC (admin_routes.go)
+- [x] Admin layout with sidebar navigation (layouts/admin.vue)
+- [x] Login page (pages/login.vue)
+- [x] Cruise management pages (list, create/edit)
+- [x] Image upload component (ImageUpload.vue)
+- [x] Cabin type management pages (pages/cabin-types/)
+- [x] Facility management pages (pages/facilities/)
+- [x] Admin handler tests (100% coverage)
+- [x] Admin component tests (Vitest)
+- [x] Admin E2E tests (Playwright)
+
+### Next: Phase 5 - Online Booking & Payment
+- [ ] Route and voyage domain models
+- [ ] Cabin inventory management
+- [ ] Booking workflow
+- [ ] Payment integration
+- [ ] Order management
 
 ---
 
@@ -774,9 +796,11 @@ cd cmd/api && swag init
 
 ---
 
-## Phase 3 File Inventory
+## Phase 3 & 4 File Inventory
 
-### Backend (16 files)
+### Phase 3: Cruise Browsing
+
+#### Backend (16 files)
 
 **Migrations:**
 - `migrations/001_cruise_companies.up.sql`
@@ -814,7 +838,7 @@ cd cmd/api && swag init
 - `internal/handler/cabin_type.go`
 - `internal/handler/facility.go`
 
-### Frontend Web (7 files)
+#### Frontend Web (7 files)
 
 **Pages:**
 - `pages/cruises/index.vue`
@@ -830,7 +854,7 @@ cd cmd/api && swag init
 - `tests/components/CruiseCard.spec.ts`
 - `tests/e2e/cruise-browsing.spec.ts`
 
-### Frontend Mini Program (6 files)
+#### Frontend Mini Program (6 files)
 
 **Pages:**
 - `pages/index/index.vue`
@@ -842,6 +866,47 @@ cd cmd/api && swag init
 
 **Tests:**
 - `tests/components/CruiseCard.spec.ts`
+
+### Phase 4: Backend Management
+
+#### Backend (8 files)
+
+**Services:**
+- `internal/service/storage.go` - MinIO file upload service
+
+**Admin Handlers:**
+- `cmd/api/admin_routes.go` - Admin routes with RBAC
+- `internal/handler/admin_cruise.go` - Admin cruise CRUD
+- `internal/handler/admin_cabin_type.go` - Admin cabin type CRUD
+- `internal/handler/admin_facility.go` - Admin facility CRUD
+
+**Admin Handler Tests:**
+- `internal/handler/admin_cruise_test.go`
+- `internal/handler/admin_cabin_type_test.go`
+- `internal/handler/admin_facility_test.go`
+
+#### Frontend Admin (12 files)
+
+**Layouts:**
+- `layouts/admin.vue` - Admin dashboard layout
+
+**Pages:**
+- `pages/login.vue` - Login page
+- `pages/cruises/index.vue` - Cruise list
+- `pages/cruises/[id].vue` - Cruise create/edit
+- `pages/cabin-types/index.vue` - Cabin type management
+- `pages/facilities/index.vue` - Facility management
+
+**Components:**
+- `components/ImageUpload.vue` - Drag-drop image upload
+- `components/TipTapEditor.vue` - Rich text editor
+- `components/layout/Header.vue` - Admin header
+- `components/layout/Sidebar.vue` - Admin sidebar
+- `components/layout/Footer.vue` - Admin footer
+
+**Tests:**
+- `tests/components/ImageUpload.spec.ts`
+- `tests/e2e/admin-panel.spec.ts`
 
 ---
 
