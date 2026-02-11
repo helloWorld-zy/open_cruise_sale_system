@@ -1,0 +1,143 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+go.work.sum
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# Build outputs
+dist/
+build/
+.output/
+.nuxt/
+.vite/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+*.cover
+*.coverage
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Dependencies
+vendor/
+node_modules/
+
+# Build
+bin/
+obj/
+out/
+dist/
+build/
+
+# Misc
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Go specific
+/backend/tmp/
+/backend/*.exe
+/backend/main
+
+# Frontend specific
+/frontend-web/.nuxt/
+/frontend-web/.output/
+/frontend-web/node_modules/
+/frontend-admin/.nuxt/
+/frontend-admin/.output/
+/frontend-admin/node_modules/
+/frontend-mini/unpackage/
+/frontend-mini/node_modules/
+
+# Shared
+/shared/node_modules/
+/shared/dist/
+/shared/build/
+
+# Secrets
+*.pem
+*.key
+*.cert
+secrets/
+config/secrets/
+
+# Local development
+*.local
+local/
+local.*
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Generated files
+*.generated.ts
+*.generated.js
+swagger.json
+docs/swagger/
+
+# Debug
+.debug/
+launch.json
+tasks.json
