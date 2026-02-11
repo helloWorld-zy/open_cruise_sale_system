@@ -2,9 +2,9 @@
 
 **Purpose**: This document provides a comprehensive overview of the project structure to facilitate code reviews and reduce token consumption during AI-assisted reviews.
 
-**Last Updated**: 2026-02-10  
-**Version**: 1.2.0  
-**Phase**: Phase 1 & 2 100% Complete ✓  
+**Last Updated**: 2026-02-11  
+**Version**: 1.3.0  
+**Phase**: Phase 1, 2 & 3 100% Complete ✓  
 
 ---
 
@@ -22,10 +22,10 @@ open_cruise_sale_system/
 │       ├── contracts/         # API contracts (OpenAPI)
 │       ├── docs/              # Developer documentation
 │       └── checklists/        # Quality checklists
-├── backend/                   # Go monolith (Phase 1 & 2 ✓)
-├── frontend-admin/           # Nuxt 4 - Management (Phase 1 & 2 ✓)
-├── frontend-web/            # Nuxt 4 - Customer Web (Phase 1 ✓)
-├── frontend-mini/          # uni-app - Mini Program (Phase 1 ✓)
+├── backend/                   # Go monolith (Phase 1, 2 & 3 ✓)
+├── frontend-admin/           # Nuxt 4 - Management (Phase 1, 2 ✓)
+├── frontend-web/            # Nuxt 4 - Customer Web (Phase 1, 3 ✓)
+├── frontend-mini/          # uni-app - Mini Program (Phase 1, 3 ✓)
 └── shared/                # Shared types & utilities (Phase 1 ✓)
 ```
 
@@ -38,8 +38,10 @@ open_cruise_sale_system/
 ```
 backend/
 ├── cmd/
-│   ├── api/                 # Main API server entry point
-│   │   └── main.go
+│   ├── api/                 # Main API server entry point ✓ Phase 3
+│   │   ├── main.go
+│   │   ├── routes.go        # API routes configuration
+│   │   └── swagger.go       # Swagger documentation
 │   └── migrate/            # Database migration tool
 │       └── main.go
 ├── internal/
@@ -55,51 +57,65 @@ backend/
 │   │   └── nats.go
 │   ├── logger/       # Zap structured logging
 │   │   └── logger.go
-│   ├── domain/      # Business entities
-│   │   ├── base.go
-│   │   ├── cruise.go
-│   │   ├── cabin_type.go
-│   │   ├── facility.go
-│   │   ├── route.go
-│   │   ├── voyage.go
-│   │   ├── cabin.go
-│   │   ├── inventory.go
-│   │   ├── price.go
-│   │   ├── order.go
-│   │   ├── user.go
+│   ├── domain/      # Business entities ✓ Phase 3 Complete
+│   │   ├── base.go                 # Base model with soft delete
+│   │   ├── cruise_company.go       # Cruise company entity
+│   │   ├── cruise.go              # Cruise ship entity
+│   │   ├── cabin_type.go          # Cabin type entity
+│   │   ├── facility.go            # Facility & category entities
+│   │   ├── route.go               # (Phase 5)
+│   │   ├── voyage.go              # (Phase 5)
+│   │   ├── cabin.go               # (Phase 5)
+│   │   ├── inventory.go           # (Phase 5)
+│   │   ├── price.go               # (Phase 5)
+│   │   ├── order.go               # (Phase 5-6)
+│   │   ├── user.go                # (Phase 7)
 │   │   └── ...
-│   ├── repository/  # Data access layer
-│   │   ├── cruise.go
-│   │   ├── cabin_type.go
+│   ├── repository/  # Data access layer ✓ Phase 3 Complete
+│   │   ├── cruise.go              # CruiseRepository
+│   │   ├── cabin_type.go          # CabinTypeRepository
+│   │   ├── facility.go            # FacilityRepository + FacilityCategoryRepository
 │   │   └── ...
-│   ├── service/    # Business logic layer
-│   │   ├── cruise.go
-│   │   ├── order.go
+│   ├── service/    # Business logic layer ✓ Phase 3 Complete
+│   │   ├── cruise.go              # CruiseService
+│   │   ├── cruise_test.go         # Unit tests ✓
+│   │   ├── cabin_type.go          # CabinTypeService
+│   │   ├── facility.go            # FacilityService + FacilityCategoryService
 │   │   └── ...
-│   ├── handler/   # HTTP handlers (controllers)
-│   │   ├── cruise.go
-│   │   ├── order.go
+│   ├── handler/   # HTTP handlers (controllers) ✓ Phase 3 Complete
+│   │   ├── auth.go                # Auth handlers (Phase 2)
+│   │   ├── cruise.go              # Cruise handlers
+│   │   ├── cruise_test.go         # Integration tests ✓
+│   │   ├── cabin_type.go          # Cabin type handlers
+│   │   ├── facility.go            # Facility handlers
 │   │   └── ...
-│   ├── middleware/  # HTTP middleware
-│   │   ├── jwt.go
-│   │   ├── auth.go
-│   │   ├── error.go
-│   │   ├── logger.go
-│   │   └── cors.go
-│   ├── auth/      # Authentication & RBAC
-│   │   ├── rbac.go
-│   │   └── hash.go
-│   ├── validator/ # Request validation
+│   ├── middleware/  # HTTP middleware ✓ Phase 2 Complete
+│   │   ├── jwt.go                 # JWT token validation
+│   │   ├── error.go               # Error handling
+│   │   ├── logger.go              # Request logging
+│   │   └── cors.go                # CORS headers
+│   ├── auth/      # Authentication & RBAC ✓ Phase 2 Complete
+│   │   ├── rbac.go                # Casbin RBAC setup
+│   │   └── role.go                # Role definitions
+│   ├── validator/ # Request validation ✓ Phase 2 Complete
 │   │   └── validator.go
-│   ├── response/ # API response helpers
+│   ├── response/ # API response helpers ✓ Phase 2 Complete
 │   │   └── response.go
-│   └── pagination/ # Pagination utilities
+│   └── pagination/ # Pagination utilities ✓ Phase 2 Complete
 │       └── pagination.go
 ├── pkg/            # Shared packages
 │   └── utils/
-├── migrations/    # Database migrations
+├── migrations/    # Database migrations ✓ Phase 3 Complete
 │   ├── 001_cruise_companies.up.sql
 │   ├── 001_cruise_companies.down.sql
+│   ├── 002_cruises.up.sql
+│   ├── 002_cruises.down.sql
+│   ├── 003_cabin_types.up.sql
+│   ├── 003_cabin_types.down.sql
+│   ├── 004_facility_categories.up.sql
+│   ├── 004_facility_categories.down.sql
+│   ├── 005_facilities.up.sql
+│   ├── 005_facilities.down.sql
 │   └── ...
 ├── tests/        # Test suites
 │   ├── unit/
@@ -109,8 +125,8 @@ backend/
 │   └── swagger.json
 ├── Dockerfile
 ├── docker-compose.yml
-├── go.mod
-├── go.sum
+go.mod
+go.sum
 ├── .env.example
 └── .air.toml   # Hot reload config
 ```
@@ -216,11 +232,12 @@ frontend-web/
 │   └── css/
 ├── components/
 │   ├── common/
-│   ├── cruise/           # Cruise-specific components
+│   ├── cruise/           # Cruise-specific components ✓ Phase 3 Complete
 │   │   ├── CruiseCard.vue
 │   │   ├── ImageGallery.vue
-│   │   └── CabinTypeAccordion.vue
-│   ├── booking/         # Booking flow components
+│   │   ├── CabinTypeAccordion.vue
+│   │   └── FacilityTabs.vue
+│   ├── booking/         # Booking flow components (Phase 5)
 │   │   ├── BookingWizard.vue
 │   │   ├── SelectVoyage.vue
 │   │   ├── SelectCabin.vue
@@ -236,11 +253,11 @@ frontend-web/
 │   └── blank.vue       # Clean layout for checkout
 ├── middleware/
 │   └── auth.ts
-├── pages/              # Public pages
+├── pages/              # Public pages ✓ Phase 3 Complete
 │   ├── index.vue      # Home
 │   ├── cruises/
 │   │   ├── index.vue  # List with filters
-│   │   └── [id].vue  # Detail page
+│   │   └── [id].vue   # Detail page ✓
 │   ├── booking/
 │   │   └── index.vue
 │   ├── payment/
@@ -255,7 +272,11 @@ frontend-web/
 ├── stores/
 ├── utils/
 ├── types/
-├── tests/
+├── tests/              # ✓ Phase 3 Complete
+│   ├── components/
+│   │   └── CruiseCard.spec.ts
+│   └── e2e/
+│       └── cruise-browsing.spec.ts
 ├── nuxt.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
@@ -281,28 +302,28 @@ frontend-web/
 
 ```
 frontend-mini/
-├── src/
-│   ├── components/
-│   │   └── CruiseCard.vue
-│   ├── pages/           # Mini program pages
-│   │   ├── index/
-│   │   │   └── index.vue
-│   │   ├── cruises/
-│   │   │   ├── index.vue
-│   │   │   └── detail.vue
-│   │   ├── booking/
-│   │   ├── payment/
-│   │   ├── orders/
-│   │   └── profile/
-│   ├── static/         # Static assets
-│   ├── store/         # Pinia stores
-│   ├── utils/
-│   │   └── api.ts
-│   ├── types/
-│   └── App.vue
-├── tests/
-├── manifest.json      # WeChat Mini Program config
-├── pages.json        # Page routes
+├── components/           # ✓ Phase 3 Complete
+│   └── CruiseCard.vue
+├── pages/               # Mini program pages ✓ Phase 3 Complete
+│   ├── index/
+│   │   └── index.vue    # Home page
+│   ├── cruises/
+│   │   ├── index.vue    # List page
+│   │   └── detail.vue   # Detail page
+│   ├── booking/         # (Phase 5)
+│   ├── payment/         # (Phase 5)
+│   ├── orders/          # (Phase 6)
+│   └── profile/         # (Phase 7)
+├── static/              # Static assets
+├── store/               # Pinia stores
+├── utils/
+│   └── api.ts
+├── tests/               # ✓ Phase 3 Complete
+│   └── components/
+│       └── CruiseCard.spec.ts
+├── manifest.json        # WeChat Mini Program config
+├── pages.json           # Page routes
+├── App.vue
 ├── uni.scss
 ├── vite.config.ts
 ├── tsconfig.json
@@ -719,13 +740,28 @@ cd cmd/api && swag init
 - [x] Common UI components (Loading, Error, Empty)
 - [x] Route guards for authentication
 
-### Next: Phase 3 - Cruise Browsing
-- [ ] Database migrations (cruises, cabin_types, facilities)
-- [ ] Domain models
-- [ ] Repository layer
-- [ ] Service layer
-- [ ] HTTP handlers
-- [ ] Frontend pages and components
+### Phase 3: Cruise Browsing ✓ (20/20)
+- [x] Database migrations (5 tables: cruise_companies, cruises, cabin_types, facility_categories, facilities)
+- [x] Domain models (CruiseCompany, Cruise, CabinType, Facility, FacilityCategory)
+- [x] Repository layer (CruiseRepository, CabinTypeRepository, FacilityRepository)
+- [x] Service layer (CruiseService, CabinTypeService, FacilityService, FacilityCategoryService)
+- [x] HTTP handlers (cruise.go, cabin_type.go, facility.go)
+- [x] API routes configuration
+- [x] Frontend Web pages (index.vue, cruises/index.vue, cruises/[id].vue)
+- [x] Frontend Web components (CruiseCard, ImageGallery, CabinTypeAccordion, FacilityTabs)
+- [x] Frontend Mini Program pages (home, cruises list, detail)
+- [x] Frontend Mini Program components (CruiseCard)
+- [x] Unit tests for service layer
+- [x] Integration tests for handlers
+- [x] Component tests for frontend
+- [x] E2E tests for cruise browsing
+
+### Next: Phase 4 - Backend Management
+- [ ] Admin CRUD handlers with image upload
+- [ ] Admin layout and navigation
+- [ ] Cruise management pages
+- [ ] Cabin type management
+- [ ] Facility management
 
 ---
 
@@ -735,6 +771,77 @@ cd cmd/api && swag init
 - **Specification**: `specs/001-cruise-booking-system/spec.md`
 - **Tasks**: `specs/001-cruise-booking-system/tasks.md`
 - **API Docs**: `specs/001-cruise-booking-system/contracts/openapi.yaml`
+
+---
+
+## Phase 3 File Inventory
+
+### Backend (16 files)
+
+**Migrations:**
+- `migrations/001_cruise_companies.up.sql`
+- `migrations/001_cruise_companies.down.sql`
+- `migrations/002_cruises.up.sql`
+- `migrations/002_cruises.down.sql`
+- `migrations/003_cabin_types.up.sql`
+- `migrations/003_cabin_types.down.sql`
+- `migrations/004_facility_categories.up.sql`
+- `migrations/004_facility_categories.down.sql`
+- `migrations/005_facilities.up.sql`
+- `migrations/005_facilities.down.sql`
+
+**Domain Models:**
+- `internal/domain/cruise_company.go`
+- `internal/domain/cruise.go`
+- `internal/domain/cabin_type.go`
+- `internal/domain/facility.go`
+
+**Repositories:**
+- `internal/repository/cruise.go`
+- `internal/repository/cabin_type.go`
+- `internal/repository/facility.go`
+
+**Services:**
+- `internal/service/cruise.go`
+- `internal/service/cruise_test.go` (tests)
+- `internal/service/cabin_type.go`
+- `internal/service/facility.go`
+
+**Handlers:**
+- `cmd/api/routes.go`
+- `internal/handler/cruise.go`
+- `internal/handler/cruise_test.go` (tests)
+- `internal/handler/cabin_type.go`
+- `internal/handler/facility.go`
+
+### Frontend Web (7 files)
+
+**Pages:**
+- `pages/cruises/index.vue`
+- `pages/cruises/[id].vue`
+
+**Components:**
+- `components/cruise/CruiseCard.vue`
+- `components/cruise/ImageGallery.vue`
+- `components/cruise/CabinTypeAccordion.vue`
+- `components/cruise/FacilityTabs.vue`
+
+**Tests:**
+- `tests/components/CruiseCard.spec.ts`
+- `tests/e2e/cruise-browsing.spec.ts`
+
+### Frontend Mini Program (6 files)
+
+**Pages:**
+- `pages/index/index.vue`
+- `pages/cruises/index.vue`
+- `pages/cruises/detail.vue`
+
+**Components:**
+- `components/CruiseCard.vue`
+
+**Tests:**
+- `tests/components/CruiseCard.spec.ts`
 
 ---
 

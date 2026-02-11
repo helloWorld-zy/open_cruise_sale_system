@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS cruise_companies CASCADE;
