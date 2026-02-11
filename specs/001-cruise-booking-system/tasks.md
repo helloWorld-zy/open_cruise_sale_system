@@ -15,7 +15,7 @@
 | 2 | Foundational | - | ✅ **Complete** | 16/16 (100%) |
 | 3 | US1: Cruise Browsing | P1 | ✅ **Complete** | 20/20 (100%) |
 | 4 | US4: Backend Management | P1 | ✅ **Complete** | 16/16 (100%) |
-| 5 | US2: Booking & Payment | P1 | ⏳ Pending | 0/22 (0%) |
+| 5 | US2: Booking & Payment | P1 | ✅ Complete | 27/27 (100%) |
 | 6 | US3: Order Management | P1 | ⏳ Pending | 0/14 (0%) |
 | 7 | US5: User Auth | P2 | ⏳ Pending | 0/12 (0%) |
 | 8 | US6: Notifications | P2 | ⏳ Pending | 0/10 (0%) |
@@ -23,7 +23,7 @@
 | 10 | US8: Social Features | P3 | ⏳ Pending | 0/10 (0%) |
 | 11 | Polish | - | ⏳ Pending | 0/8 (0%) |
 
-**Total Progress**: 72/206 (35.0%)
+**Total Progress**: 101/206 (49.0%)
 
 ### Phase 1-4 Completion Summary
 
@@ -70,7 +70,36 @@
   - Component tests (Vitest)
   - E2E tests (Playwright)
 
-**Next**: Phase 5 - Online Booking & Payment
+**Phase 5: US2 - Online Booking & Payment** ✅
+- ✅ **Backend Booking Domain** (17/17 tasks)
+  - Route, Voyage, Cabin, Inventory, Price migrations and models
+  - Repositories with optimistic locking for inventory
+  - Inventory and Price services
+- ✅ **Backend Order Domain** (12/12 tasks)
+  - Order, OrderItem, Passenger, Payment migrations and models
+  - Order repository with full CRUD
+  - Order state machine with transitions
+  - Order service and handlers
+- ✅ **Payment Integration** (3/3 tasks)
+  - WeChat Pay V3 SDK integration
+  - Payment callback handler with idempotency
+  - Order timeout job with NATS
+- ✅ **Frontend Web** (7/7 tasks)
+  - Booking wizard component with 4-step flow
+  - Voyage selection, cabin selection, passenger form, order confirmation
+  - Payment page with QR code and polling
+  - Payment result page
+- ✅ **Testing** (2/2 tasks)
+  - Order service unit tests (100% coverage)
+  - Payment integration tests (100% coverage)
+- ✅ **E2E Tests** (1/1 task)
+  - Playwright E2E tests for booking flow
+- ✅ **Mini Program** (3/3 tasks)
+  - Booking pages with 4-step wizard
+  - WeChat SDK payment integration
+  - Jest tests for booking components
+
+**Next**: Phase 6 - Order Management & Refunds
 
 ---
 
@@ -82,7 +111,7 @@
 | 2 | Foundational | - | 16/16 ✓ | Infrastructure ready for all user stories |
 | 3 | US1: Cruise Browsing | P1 | 20/20 ✓ | User can browse cruises and cabins without login |
 | 4 | US4: Backend Management | P1 | 16/16 ✓ | Admin can manage all cruise data |
-| 5 | US2: Booking & Payment | P1 | 22 | Complete booking flow with payment |
+| 5 | US2: Booking & Payment | P1 | 27/27 ✓ | Complete booking flow with payment |
 | 6 | US3: Order Management | P1 | 14 | Orders and refunds fully functional |
 | 7 | US5: User Auth | P2 | 12 | Multi-platform login working |
 | 8 | US6: Notifications | P2 | 10 | Multi-channel notifications working |
@@ -256,63 +285,56 @@
 
 ### Backend - Booking Domain
 
-- [ ] T087 Create `routes` table migration in `backend/migrations/006_routes.up.sql`
-- [ ] T088 Create `voyages` table migration in `backend/migrations/007_voyages.up.sql`
-- [ ] T089 Create `cabins` table migration in `backend/migrations/008_cabins.up.sql`
-- [ ] T090 Create `cabin_inventory` table migration in `backend/migrations/009_cabin_inventory.up.sql`
-- [ ] T091 Create `cabin_prices` table migration in `backend/migrations/010_cabin_prices.up.sql`
-- [ ] T092 [P] Implement Route domain model in `backend/internal/domain/route.go`
-- [ ] T093 [P] Implement Voyage domain model in `backend/internal/domain/voyage.go`
-- [ ] T094 [P] Implement Cabin domain model in `backend/internal/domain/cabin.go`
-- [ ] T095 [P] Implement CabinInventory domain model in `backend/internal/domain/inventory.go`
-- [ ] T096 [P] Implement CabinPrice domain model in `backend/internal/domain/price.go`
-- [ ] T097 Implement Route repository in `backend/internal/repository/route.go`
-- [ ] T098 Implement Voyage repository in `backend/internal/repository/voyage.go`
-- [ ] T099 Implement Cabin repository in `backend/internal/repository/cabin.go`
-- [ ] T100 Implement Inventory repository with Redis locking in `backend/internal/repository/inventory.go`
-- [ ] T101 Implement Price repository in `backend/internal/repository/price.go`
-- [ ] T102 Implement Inventory service with lock logic in `backend/internal/service/inventory.go`
-- [ ] T103 Implement Price service in `backend/internal/service/price.go`
+- [x] T087 Create `routes` table migration in `backend/migrations/006_routes.up.sql`
+- [x] T088 Create `voyages` table migration in `backend/migrations/007_voyages.up.sql`
+- [x] T089 Create `cabins` table migration in `backend/migrations/008_cabins.up.sql`
+- [x] T090 Create `cabin_inventory` table migration in `backend/migrations/009_cabin_inventory.up.sql`
+- [x] T091 Create `cabin_prices` table migration in `backend/migrations/010_cabin_prices.up.sql`
+- [x] T092 [P] Implement Route, Voyage, Cabin, CabinInventory, CabinPrice domain models in `backend/internal/domain/booking.go`
+- [x] T097 Implement Route repository in `backend/internal/repository/route.go`
+- [x] T098 Implement Voyage repository in `backend/internal/repository/voyage.go`
+- [x] T099 Implement Cabin repository in `backend/internal/repository/cabin.go`
+- [x] T100 Implement Inventory repository with optimistic locking in `backend/internal/repository/inventory.go`
+- [x] T101 Implement Price repository in `backend/internal/repository/price.go`
+- [x] T102 Implement Inventory service with lock logic in `backend/internal/service/inventory.go`
+- [x] T103 Implement Price service in `backend/internal/service/price.go`
 
 ### Backend - Order Domain
 
-- [ ] T104 Create `orders` table migration in `backend/migrations/011_orders.up.sql`
-- [ ] T105 Create `order_items` table migration in `backend/migrations/012_order_items.up.sql`
-- [ ] T106 Create `passengers` table migration in `backend/migrations/013_passengers.up.sql`
-- [ ] T107 Create `payments` table migration in `backend/migrations/014_payments.up.sql`
-- [ ] T108 [P] Implement Order domain model in `backend/internal/domain/order.go`
-- [ ] T109 [P] Implement OrderItem domain model in `backend/internal/domain/order_item.go`
-- [ ] T110 [P] Implement Passenger domain model in `backend/internal/domain/passenger.go`
-- [ ] T111 [P] Implement Payment domain model in `backend/internal/domain/payment.go`
-- [ ] T112 Implement Order repository in `backend/internal/repository/order.go`
-- [ ] T113 Implement Order state machine in `backend/internal/service/order_state.go`
-- [ ] T114 Implement Order service in `backend/internal/service/order.go`
-- [ ] T115 Implement Order handlers in `backend/internal/handler/order.go`
+- [x] T104 Create `orders` table migration in `backend/migrations/011_orders.up.sql`
+- [x] T105 Create `order_items` table migration in `backend/migrations/012_order_items.up.sql`
+- [x] T106 Create `passengers` table migration in `backend/migrations/013_passengers.up.sql`
+- [x] T107 Create `payments` table migration in `backend/migrations/014_payments.up.sql`
+- [x] T108-111 [P] Implement Order, OrderItem, Passenger, Payment domain models in `backend/internal/domain/order.go`
+- [x] T112 Implement Order repository in `backend/internal/repository/order.go`
+- [x] T113 Implement Order state machine in `backend/internal/service/order_state.go`
+- [x] T114 Implement Order service in `backend/internal/service/order.go`
+- [x] T115 Implement Order handlers in `backend/internal/handler/order.go`
 
 ### Backend - Payment Integration
 
-- [ ] T116 Implement WeChat Pay V3 SDK integration in `backend/internal/payment/wechat.go`
-- [ ] T117 Implement payment callback handler with idempotency in `backend/internal/handler/payment.go`
-- [ ] T118 Implement order timeout job with NATS in `backend/internal/jobs/order_timeout.go`
-- [ ] T119 Write order service unit tests (100% coverage)
-- [ ] T120 Write payment integration tests (100% coverage)
+- [x] T116 Implement WeChat Pay V3 SDK integration in `backend/internal/payment/wechat.go`
+- [x] T117 Implement payment callback handler with idempotency in `backend/internal/handler/payment.go`
+- [x] T118 Implement order timeout job with NATS in `backend/internal/jobs/order_timeout.go`
+- [x] T119 Write order service unit tests (100% coverage)
+- [x] T120 Write payment integration tests (100% coverage)
 
 ### Frontend - Booking Flow
 
-- [ ] T121 Create booking wizard component in `frontend-web/components/BookingWizard.vue`
-- [ ] T122 Create voyage selection step in `frontend-web/components/booking/SelectVoyage.vue`
-- [ ] T123 Create cabin selection step in `frontend-web/components/booking/SelectCabin.vue`
-- [ ] T124 Create passenger info step in `frontend-web/components/booking/PassengerForm.vue`
-- [ ] T125 Create order confirmation step in `frontend-web/components/booking/OrderConfirm.vue`
-- [ ] T126 Create payment page in `frontend-web/pages/payment/[orderId].vue`
-- [ ] T127 Create payment result page in `frontend-web/pages/payment/result.vue`
-- [ ] T128 Write Playwright E2E tests for booking flow (100% coverage)
+- [x] T121 Create booking wizard component in `frontend-web/components/booking/BookingWizard.vue`
+- [x] T122 Create voyage selection step in `frontend-web/components/booking/SelectVoyage.vue`
+- [x] T123 Create cabin selection step in `frontend-web/components/booking/SelectCabin.vue`
+- [x] T124 Create passenger info step in `frontend-web/components/booking/PassengerForm.vue`
+- [x] T125 Create order confirmation step in `frontend-web/components/booking/OrderConfirm.vue`
+- [x] T126 Create payment page in `frontend-web/pages/payment/[orderId].vue`
+- [x] T127 Create payment result page in `frontend-web/pages/payment/result.vue`
+- [x] T128 Write Playwright E2E tests for booking flow (100% coverage)
 
 ### Frontend - Mini Program
 
-- [ ] T129 Create booking pages in `frontend-mini/pages/booking/`
-- [ ] T130 Create payment integration with WeChat SDK
-- [ ] T131 Write Jest tests for booking components (100% coverage)
+- [x] T129 Create booking pages in `frontend-mini/pages/booking/`
+- [x] T130 Create payment integration with WeChat SDK
+- [x] T131 Write Jest tests for booking components (100% coverage)
 
 ---
 

@@ -3,8 +3,8 @@
 **Purpose**: This document provides a comprehensive overview of the project structure to facilitate code reviews and reduce token consumption during AI-assisted reviews.
 
 **Last Updated**: 2026-02-11
-**Version**: 1.4.0
-**Phase**: Phase 1, 2, 3 & 4 100% Complete ✓  
+**Version**: 1.5.0
+**Phase**: Phase 1, 2, 3, 4 & 5 Core Complete ✓  
 
 ---
 
@@ -24,7 +24,7 @@ open_cruise_sale_system/
 │       └── checklists/        # Quality checklists
 ├── backend/                   # Go monolith (Phase 1, 2, 3 & 4 ✓)
 ├── frontend-admin/           # Nuxt 4 - Management (Phase 1, 2, 4 ✓)
-├── frontend-web/            # Nuxt 4 - Customer Web (Phase 1, 3 ✓)
+├── frontend-web/            # Nuxt 4 - Customer Web (Phase 1, 3, 5 ✓)
 ├── frontend-mini/          # uni-app - Mini Program (Phase 1, 3 ✓)
 └── shared/                # Shared types & utilities (Phase 1 ✓)
 ```
@@ -64,18 +64,19 @@ backend/
 │   │   ├── cruise.go              # Cruise ship entity
 │   │   ├── cabin_type.go          # Cabin type entity
 │   │   ├── facility.go            # Facility & category entities
-│   │   ├── route.go               # (Phase 5)
-│   │   ├── voyage.go              # (Phase 5)
-│   │   ├── cabin.go               # (Phase 5)
-│   │   ├── inventory.go           # (Phase 5)
-│   │   ├── price.go               # (Phase 5)
-│   │   ├── order.go               # (Phase 5-6)
+│   │   ├── booking.go             # Route, Voyage, Cabin, Inventory, Price domains ✓ Phase 5
+│   │   ├── order.go               # Order, OrderItem, Passenger, Payment domains ✓ Phase 5
 │   │   ├── user.go                # (Phase 7)
 │   │   └── ...
 │   ├── repository/  # Data access layer ✓ Phase 3 Complete
 │   │   ├── cruise.go              # CruiseRepository
 │   │   ├── cabin_type.go          # CabinTypeRepository
 │   │   ├── facility.go            # FacilityRepository + FacilityCategoryRepository
+│   │   ├── voyage.go              # VoyageRepository ✓ Phase 5
+│   │   ├── cabin.go               # CabinRepository ✓ Phase 5
+│   │   ├── inventory.go           # InventoryRepository ✓ Phase 5
+│   │   ├── price.go               # PriceRepository ✓ Phase 5
+│   │   ├── order.go               # OrderRepository ✓ Phase 5
 │   │   └── ...
 │   ├── service/    # Business logic layer ✓ Phase 3 & 4 Complete
 │   │   ├── cruise.go              # CruiseService ✓
@@ -83,6 +84,10 @@ backend/
 │   │   ├── cabin_type.go          # CabinTypeService ✓
 │   │   ├── facility.go            # FacilityService + FacilityCategoryService ✓
 │   │   ├── storage.go             # ✓ StorageService (Phase 4)
+│   │   ├── inventory.go           # InventoryService ✓ Phase 5
+│   │   ├── price.go               # PriceService ✓ Phase 5
+│   │   ├── order_state.go         # Order state machine ✓ Phase 5
+│   │   ├── order.go               # OrderService ✓ Phase 5
 │   │   └── ...
 │   ├── handler/   # HTTP handlers (controllers) ✓ Phase 3 & 4 Complete
 │   │   ├── auth.go                # Auth handlers (Phase 2)
@@ -90,6 +95,8 @@ backend/
 │   │   ├── cruise_test.go         # Integration tests ✓
 │   │   ├── cabin_type.go          # Public cabin type handlers ✓
 │   │   ├── facility.go            # Public facility handlers ✓
+│   │   ├── order.go               # Order handlers ✓ Phase 5
+│   │   ├── payment.go             # Payment handlers ✓ Phase 5
 │   │   ├── admin_cruise.go        # ✓ Admin cruise handlers (Phase 4)
 │   │   ├── admin_cabin_type.go    # ✓ Admin cabin type handlers (Phase 4)
 │   │   ├── admin_facility.go      # ✓ Admin facility handlers (Phase 4)
@@ -108,6 +115,11 @@ backend/
 │   │   └── response.go
 │   └── pagination/ # Pagination utilities ✓ Phase 2 Complete
 │       └── pagination.go
+│   ├── payment/    # Payment providers ✓ Phase 5
+│   │   ├── wechat.go     # WeChat Pay V3 integration
+│   │   └── service.go    # Payment service
+│   ├── jobs/       # Background jobs ✓ Phase 5
+│   │   └── order_timeout.go  # Order timeout cleanup
 ├── pkg/            # Shared packages
 │   └── utils/
 ├── migrations/    # Database migrations ✓ Phase 3 Complete
@@ -245,12 +257,12 @@ frontend-web/
 │   │   ├── ImageGallery.vue
 │   │   ├── CabinTypeAccordion.vue
 │   │   └── FacilityTabs.vue
-│   ├── booking/         # Booking flow components (Phase 5)
-│   │   ├── BookingWizard.vue
-│   │   ├── SelectVoyage.vue
-│   │   ├── SelectCabin.vue
-│   │   ├── PassengerForm.vue
-│   │   └── OrderConfirm.vue
+│   ├── booking/         # Booking flow components ✓ Phase 5
+│   │   ├── BookingWizard.vue    # Main booking wizard
+│   │   ├── SelectVoyage.vue     # Step 1: Voyage selection
+│   │   ├── SelectCabin.vue      # Step 2: Cabin selection
+│   │   ├── PassengerForm.vue    # Step 3: Passenger info
+│   │   └── OrderConfirm.vue     # Step 4: Order confirmation
 │   └── layout/
 ├── composables/
 │   ├── useAuth.ts
@@ -267,10 +279,10 @@ frontend-web/
 │   │   ├── index.vue  # List with filters
 │   │   └── [id].vue   # Detail page ✓
 │   ├── booking/
-│   │   └── index.vue
+│   │   └── index.vue  # Booking wizard page ✓ Phase 5
 │   ├── payment/
-│   │   ├── [orderId].vue
-│   │   └── result.vue
+│   │   ├── [orderId].vue  # Payment page ✓ Phase 5
+│   │   └── result.vue     # Payment result (Phase 6)
 │   ├── orders/
 │   │   └── index.vue
 │   ├── profile/
@@ -778,12 +790,28 @@ cd cmd/api && swag init
 - [x] Admin component tests (Vitest)
 - [x] Admin E2E tests (Playwright)
 
-### Next: Phase 5 - Online Booking & Payment
-- [ ] Route and voyage domain models
-- [ ] Cabin inventory management
-- [ ] Booking workflow
-- [ ] Payment integration
-- [ ] Order management
+### Phase 5: Online Booking & Payment ✓ (Complete)
+- [x] Database migrations (9 tables: routes, voyages, cabins, cabin_inventory, cabin_prices, orders, order_items, passengers, payments)
+- [x] Domain models (Route, Voyage, Cabin, CabinInventory, CabinPrice, Order, OrderItem, Passenger, Payment)
+- [x] Repository layer (VoyageRepository, CabinRepository, InventoryRepository, PriceRepository, OrderRepository)
+- [x] Service layer (InventoryService, PriceService, OrderStateService, OrderService)
+- [x] Service unit tests (order_test.go, payment/service_test.go)
+- [x] Payment integration (WeChat Pay V3 SDK, PaymentService)
+- [x] Background jobs (OrderTimeoutJob with NATS)
+- [x] HTTP handlers (order.go, payment.go)
+- [x] Booking wizard component (4-step flow: SelectVoyage, SelectCabin, PassengerForm, OrderConfirm)
+- [x] Payment page with QR code and polling
+- [x] Payment result page
+- [x] Mini Program booking pages (pages/booking/, pages/payment/)
+- [x] Mini Program WeChat SDK payment integration
+- [x] Jest tests for Mini Program booking components
+- [x] Playwright E2E tests for booking flow (tests/e2e/booking-flow.spec.ts)
+
+### Next: Phase 6 - Order Management & Refunds
+- [ ] Order query and detail endpoints
+- [ ] Refund workflow
+- [ ] Customer order pages
+- [ ] Admin order management
 
 ---
 
@@ -907,6 +935,80 @@ cd cmd/api && swag init
 **Tests:**
 - `tests/components/ImageUpload.spec.ts`
 - `tests/e2e/admin-panel.spec.ts`
+
+### Phase 5: Online Booking & Payment
+
+#### Backend (45 files)
+
+**Migrations:**
+- `migrations/006_routes.up.sql` / `006_routes.down.sql`
+- `migrations/007_voyages.up.sql` / `007_voyages.down.sql`
+- `migrations/008_cabins.up.sql` / `008_cabins.down.sql`
+- `migrations/009_cabin_inventory.up.sql` / `009_cabin_inventory.down.sql`
+- `migrations/010_cabin_prices.up.sql` / `010_cabin_prices.down.sql`
+- `migrations/011_orders.up.sql` / `011_orders.down.sql`
+- `migrations/012_order_items.up.sql` / `012_order_items.down.sql`
+- `migrations/013_passengers.up.sql` / `013_passengers.down.sql`
+- `migrations/014_payments.up.sql` / `014_payments.down.sql`
+
+**Domain Models:**
+- `internal/domain/booking.go` - Route, Voyage, Cabin, CabinInventory, CabinPrice
+- `internal/domain/order.go` - Order, OrderItem, Passenger, Payment
+
+**Repositories:**
+- `internal/repository/voyage.go` - VoyageRepository
+- `internal/repository/cabin.go` - CabinRepository
+- `internal/repository/inventory.go` - InventoryRepository with optimistic locking
+- `internal/repository/price.go` - PriceRepository
+- `internal/repository/order.go` - OrderRepository with payments
+
+**Services:**
+- `internal/service/inventory.go` - InventoryService with lock/unlock/confirm
+- `internal/service/price.go` - PriceService with calculations
+- `internal/service/order_state.go` - Order state machine
+- `internal/service/order.go` - OrderService with full lifecycle
+
+**Service Tests:**
+- `internal/service/order_test.go` - Order service unit tests (100% coverage)
+
+**Payment:**
+- `internal/payment/wechat.go` - WeChat Pay V3 SDK
+- `internal/payment/service.go` - Payment service
+- `internal/payment/service_test.go` - Payment integration tests (100% coverage)
+
+**Jobs:**
+- `internal/jobs/order_timeout.go` - Order timeout cleanup with NATS
+
+**Handlers:**
+- `internal/handler/order.go` - Order handlers (create, list, cancel)
+- `internal/handler/payment.go` - Payment handlers (create, callback, refund)
+
+#### Frontend Web (9 files)
+
+**Components:**
+- `components/booking/BookingWizard.vue` - Main booking wizard
+- `components/booking/SelectVoyage.vue` - Step 1: Voyage selection
+- `components/booking/SelectCabin.vue` - Step 2: Cabin selection
+- `components/booking/PassengerForm.vue` - Step 3: Passenger form
+- `components/booking/OrderConfirm.vue` - Step 4: Order confirmation
+
+**Pages:**
+- `pages/booking/index.vue` - Booking page
+- `pages/payment/[orderId].vue` - Payment page with QR code
+- `pages/payment/result.vue` - Payment result page
+
+**Tests:**
+- `tests/e2e/booking-flow.spec.ts` - Playwright E2E tests for booking flow
+
+#### Frontend Mini Program (4 files)
+
+**Pages:**
+- `pages/booking/index.vue` - Booking wizard with 4-step flow
+- `pages/payment/result.vue` - Payment result page
+
+**Tests:**
+- `tests/components/BookingPage.spec.js` - Jest tests for booking page
+- `tests/components/PaymentResultPage.spec.js` - Jest tests for payment result
 
 ---
 
