@@ -1,0 +1,11 @@
+ALTER TABLE notifications DROP CONSTRAINT IF EXISTS fk_notifications_user;
+DROP INDEX IF EXISTS idx_notifications_user_unread;
+DROP INDEX IF EXISTS idx_notifications_source;
+DROP INDEX IF EXISTS idx_notifications_priority;
+DROP INDEX IF EXISTS idx_notifications_created_at;
+DROP INDEX IF EXISTS idx_notifications_channel;
+DROP INDEX IF EXISTS idx_notifications_type;
+DROP INDEX IF EXISTS idx_notifications_user_archived;
+DROP INDEX IF EXISTS idx_notifications_user_read;
+DROP INDEX IF EXISTS idx_notifications_user_id;
+DROP TABLE IF EXISTS notifications;

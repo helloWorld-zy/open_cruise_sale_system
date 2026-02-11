@@ -820,11 +820,38 @@ cd cmd/api && swag init
 - [x] Admin order detail (pages/orders/[id].vue)
 - [x] Admin refund management (pages/refunds/index.vue)
 
-### Next: Phase 7 - User Authentication & Account
-- [ ] Users table migration
-- [ ] User domain model
-- [ ] WeChat login service
-- [ ] SMS verification
+### Phase 7: User Authentication & Account ✓ (Complete)
+- [x] Users table migration
+- [x] FrequentPassengers table migration
+- [x] User domain model
+- [x] FrequentPassenger domain model
+- [x] User repository
+- [x] WeChat login service (wechat_auth.go)
+- [x] SMS verification service (sms.go)
+- [x] User handlers
+- [x] Login modal component
+- [x] User profile page
+- [x] Frequent passengers management
+- [x] Mini program login page
+- [x] Auth flow E2E tests
+
+### Phase 8: Notifications & Reminders ✓ (Complete)
+- [x] Notifications table migration (018_notifications.up/down.sql)
+- [x] NotificationSettings table migration (019_notification_settings.up/down.sql)
+- [x] Notification domain model (notification.go)
+- [x] Notification repository (notification.go)
+- [x] Notification service (notification.go)
+- [x] WeChat template message sender (wechat.go)
+- [x] SMS sender (sms.go)
+- [x] Inventory alert job (inventory_alert.go)
+- [x] Notification handler (notification.go)
+- [x] NotificationCenter component
+- [x] Notification settings page
+
+### Next: Phase 9 - Smart Recommendations
+- [ ] User behavior tracking
+- [ ] Recommendation engine
+- [ ] Analytics dashboard
 
 ---
 
@@ -1055,6 +1082,42 @@ cd cmd/api && swag init
 - `pages/orders/index.vue` - Admin order list with filters
 - `pages/orders/[id].vue` - Admin order detail view
 - `pages/refunds/index.vue` - Refund approval interface
+
+### Phase 7: User Authentication & Account
+
+#### Backend (8 files)
+
+**Migrations:**
+- `migrations/016_users.up.sql` / `016_users.down.sql`
+- `migrations/017_frequent_passengers.up.sql` / `017_frequent_passengers.down.sql`
+
+**Domain Models:**
+- `internal/domain/user.go` - User domain model
+- `internal/domain/frequent_passenger.go` - FrequentPassenger domain model
+
+**Repositories:**
+- `internal/repository/user.go` - UserRepository with frequent passengers
+
+**Services:**
+- `internal/service/wechat_auth.go` - WeChat authentication service
+- `internal/service/sms.go` - SMS verification service
+
+**Handlers:**
+- `internal/handler/user.go` - User handlers (profile, passengers)
+
+#### Frontend Web (3 files)
+
+**Components:**
+- `components/LoginModal.vue` - Login modal with WeChat and SMS
+
+**Pages:**
+- `pages/profile/index.vue` - User profile page
+- `pages/profile/passengers.vue` - Frequent passengers management
+
+#### Frontend Mini Program (1 file)
+
+**Pages:**
+- `pages/login/index.vue` - WeChat and SMS login page
 
 ---
 

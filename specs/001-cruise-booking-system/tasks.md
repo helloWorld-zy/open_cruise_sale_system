@@ -17,14 +17,13 @@
 | 4 | US4: Backend Management | P1 | ✅ **Complete** | 16/16 (100%) |
 | 5 | US2: Booking & Payment | P1 | ✅ Complete | 27/27 (100%) |
 | 6 | US3: Order Management | P1 | ✅ Complete | 13/13 (100%) |
-| 6 | US3: Order Management | P1 | ✅ Complete | 13/13 (100%) |
-| 7 | US5: User Auth | P2 | ⏳ Pending | 0/12 (0%) |
-| 8 | US6: Notifications | P2 | ⏳ Pending | 0/10 (0%) |
+| 7 | US5: User Auth | P2 | ✅ Complete | 14/14 (100%) |
+| 8 | US6: Notifications | P2 | ✅ Complete | 10/10 (100%) |
 | 9 | US7: Smart Features | P3 | ⏳ Pending | 0/12 (0%) |
 | 10 | US8: Social Features | P3 | ⏳ Pending | 0/10 (0%) |
 | 11 | Polish | - | ⏳ Pending | 0/8 (0%) |
 
-**Total Progress**: 114/206 (55.3%)
+**Total Progress**: 138/206 (67.0%)
 
 ### Phase 1-4 Completion Summary
 
@@ -118,7 +117,25 @@
   - Order detail view with status update
   - Refund approval interface
 
-**Next**: Phase 7 - User Authentication & Account
+**Phase 7: US5 - User Authentication & Account** ✅
+- ✅ **Backend** (9/9 tasks)
+  - Users and FrequentPassengers table migrations
+  - User and FrequentPassenger domain models
+  - User repository with CRUD operations
+  - WeChat authentication service (code2session, phone login)
+  - SMS verification service
+  - User handlers (profile, frequent passengers)
+  - User service tests
+- ✅ **Frontend Web** (3/3 tasks)
+  - Login modal with WeChat and SMS options
+  - User profile page with statistics
+  - Frequent passengers management
+- ✅ **Mini Program** (1/1 task)
+  - WeChat and SMS login page
+- ✅ **E2E Tests** (1/1 task)
+  - Auth flow E2E tests
+
+**Next**: Phase 8 - Notifications & Reminders
 
 ---
 
@@ -397,23 +414,23 @@
 
 ### Backend - User Domain
 
-- [ ] T145 Create `users` table migration in `backend/migrations/016_users.up.sql`
-- [ ] T146 Create `frequent_passengers` table migration in `backend/migrations/017_frequent_passengers.up.sql`
-- [ ] T147 [P] Implement User domain model in `backend/internal/domain/user.go`
-- [ ] T148 [P] Implement FrequentPassenger domain model in `backend/internal/domain/frequent_passenger.go`
-- [ ] T149 Implement User repository in `backend/internal/repository/user.go`
-- [ ] T150 Implement WeChat login service in `backend/internal/service/wechat_auth.go`
-- [ ] T151 Implement SMS verification service in `backend/internal/service/sms.go`
-- [ ] T152 Implement user handlers in `backend/internal/handler/user.go`
-- [ ] T153 Write user service tests (100% coverage)
+- [x] T145 Create `users` table migration in `backend/migrations/016_users.up.sql`
+- [x] T146 Create `frequent_passengers` table migration in `backend/migrations/017_frequent_passengers.up.sql`
+- [x] T147 [P] Implement User domain model in `backend/internal/domain/user.go`
+- [x] T148 [P] Implement FrequentPassenger domain model in `backend/internal/domain/frequent_passenger.go`
+- [x] T149 Implement User repository in `backend/internal/repository/user.go`
+- [x] T150 Implement WeChat login service in `backend/internal/service/wechat_auth.go`
+- [x] T151 Implement SMS verification service in `backend/internal/service/sms.go`
+- [x] T152 Implement user handlers in `backend/internal/handler/user.go`
+- [x] T153 Write user service tests (100% coverage)
 
 ### Frontend
 
-- [ ] T154 Create login modal in `frontend-web/components/LoginModal.vue`
-- [ ] T155 Create user profile page in `frontend-web/pages/profile/index.vue`
-- [ ] T156 Create frequent passengers management in `frontend-web/pages/profile/passengers.vue`
-- [ ] T157 Implement WeChat login in mini program
-- [ ] T158 Write auth flow E2E tests (100% coverage)
+- [x] T154 Create login modal in `frontend-web/components/LoginModal.vue`
+- [x] T155 Create user profile page in `frontend-web/pages/profile/index.vue`
+- [x] T156 Create frequent passengers management in `frontend-web/pages/profile/passengers.vue`
+- [x] T157 Implement WeChat login in mini program
+- [x] T158 Write auth flow E2E tests (100% coverage)
 
 ---
 
@@ -426,18 +443,18 @@
 
 ### Backend
 
-- [ ] T159 Create `notifications` table migration in `backend/migrations/018_notifications.up.sql`
-- [ ] T160 Implement Notification domain model in `backend/internal/domain/notification.go`
-- [ ] T161 Implement notification service in `backend/internal/service/notification.go`
-- [ ] T162 Implement WeChat template message sender in `backend/internal/notification/wechat.go`
-- [ ] T163 Implement SMS sender in `backend/internal/notification/sms.go`
-- [ ] T164 Implement inventory alert job in `backend/internal/jobs/inventory_alert.go`
-- [ ] T165 Write notification tests (100% coverage)
+- [x] T159 Create `notifications` table migration in `backend/migrations/018_notifications.up.sql`
+- [x] T160 Implement Notification domain model in `backend/internal/domain/notification.go`
+- [x] T161 Implement notification service in `backend/internal/service/notification.go`
+- [x] T162 Implement WeChat template message sender in `backend/internal/notification/wechat.go`
+- [x] T163 Implement SMS sender in `backend/internal/notification/sms.go`
+- [x] T164 Implement inventory alert job in `backend/internal/jobs/inventory_alert.go`
+- [x] T165 Write notification tests (100% coverage)
 
 ### Frontend
 
-- [ ] T166 Create notification center in `frontend-web/components/NotificationCenter.vue`
-- [ ] T167 Create notification settings in `frontend-web/pages/profile/notifications.vue`
+- [x] T166 Create notification center in `frontend-web/components/NotificationCenter.vue`
+- [x] T167 Create notification settings in `frontend-web/pages/profile/notifications.vue`
 
 ---
 
