@@ -807,11 +807,24 @@ cd cmd/api && swag init
 - [x] Jest tests for Mini Program booking components
 - [x] Playwright E2E tests for booking flow (tests/e2e/booking-flow.spec.ts)
 
-### Next: Phase 6 - Order Management & Refunds
-- [ ] Order query and detail endpoints
-- [ ] Refund workflow
-- [ ] Customer order pages
-- [ ] Admin order management
+### Phase 6: Order Management & Refunds ✓ (Complete)
+- [x] Refund requests table migration
+- [x] RefundRequest domain model
+- [x] Order query endpoints (order_query.go)
+- [x] Refund workflow service (refund.go)
+- [x] Admin order handlers (admin_order.go)
+- [x] My Orders page (pages/orders/index.vue)
+- [x] Order detail page (pages/orders/[id].vue)
+- [x] Refund request modal (RefundRequestModal.vue)
+- [x] Admin order list (pages/orders/index.vue)
+- [x] Admin order detail (pages/orders/[id].vue)
+- [x] Admin refund management (pages/refunds/index.vue)
+
+### Next: Phase 7 - User Authentication & Account
+- [ ] Users table migration
+- [ ] User domain model
+- [ ] WeChat login service
+- [ ] SMS verification
 
 ---
 
@@ -1009,6 +1022,39 @@ cd cmd/api && swag init
 **Tests:**
 - `tests/components/BookingPage.spec.js` - Jest tests for booking page
 - `tests/components/PaymentResultPage.spec.js` - Jest tests for payment result
+
+### Phase 6: Order Management & Refunds
+
+#### Backend (8 files)
+
+**Migrations:**
+- `migrations/015_refund_requests.up.sql` / `015_refund_requests.down.sql`
+
+**Domain Models:**
+- `internal/domain/refund.go` - RefundRequest domain model
+
+**Services:**
+- `internal/service/refund.go` - RefundService with workflow
+
+**Handlers:**
+- `internal/handler/order_query.go` - Order query endpoints
+- `internal/handler/admin_order.go` - Admin order and refund handlers
+
+#### Frontend Web (Customer) (3 files)
+
+**Pages:**
+- `pages/orders/index.vue` - My orders page with statistics
+- `pages/orders/[id].vue` - Order detail page
+
+**Components:**
+- `components/RefundRequestModal.vue` - Refund request form modal
+
+#### Frontend Admin (3 files)
+
+**Pages:**
+- `pages/orders/index.vue` - Admin order list with filters
+- `pages/orders/[id].vue` - Admin order detail view
+- `pages/refunds/index.vue` - Refund approval interface
 
 ---
 

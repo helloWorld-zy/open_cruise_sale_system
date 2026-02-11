@@ -16,14 +16,15 @@
 | 3 | US1: Cruise Browsing | P1 | ✅ **Complete** | 20/20 (100%) |
 | 4 | US4: Backend Management | P1 | ✅ **Complete** | 16/16 (100%) |
 | 5 | US2: Booking & Payment | P1 | ✅ Complete | 27/27 (100%) |
-| 6 | US3: Order Management | P1 | ⏳ Pending | 0/14 (0%) |
+| 6 | US3: Order Management | P1 | ✅ Complete | 13/13 (100%) |
+| 6 | US3: Order Management | P1 | ✅ Complete | 13/13 (100%) |
 | 7 | US5: User Auth | P2 | ⏳ Pending | 0/12 (0%) |
 | 8 | US6: Notifications | P2 | ⏳ Pending | 0/10 (0%) |
 | 9 | US7: Smart Features | P3 | ⏳ Pending | 0/12 (0%) |
 | 10 | US8: Social Features | P3 | ⏳ Pending | 0/10 (0%) |
 | 11 | Polish | - | ⏳ Pending | 0/8 (0%) |
 
-**Total Progress**: 101/206 (49.0%)
+**Total Progress**: 114/206 (55.3%)
 
 ### Phase 1-4 Completion Summary
 
@@ -99,7 +100,25 @@
   - WeChat SDK payment integration
   - Jest tests for booking components
 
-**Next**: Phase 6 - Order Management & Refunds
+**Phase 6: US3 - Order Management & Refunds** ✅
+- ✅ **Backend** (6/6 tasks)
+  - Refund requests table migration
+  - RefundRequest domain model
+  - Order query endpoints
+  - Refund workflow service
+  - Admin order handlers
+  - Refund service tests
+- ✅ **Frontend Web** (4/4 tasks)
+  - My Orders page with statistics
+  - Order detail page
+  - Refund request form
+  - Order management E2E tests
+- ✅ **Frontend Admin** (3/3 tasks)
+  - Order management list
+  - Order detail view with status update
+  - Refund approval interface
+
+**Next**: Phase 7 - User Authentication & Account
 
 ---
 
@@ -347,25 +366,25 @@
 
 ### Backend - Order Management
 
-- [ ] T132 Create `refund_requests` table migration in `backend/migrations/015_refund_requests.up.sql`
-- [ ] T133 Implement RefundRequest domain model in `backend/internal/domain/refund.go`
-- [ ] T134 Implement order query endpoints in `backend/internal/handler/order_query.go`
-- [ ] T135 Implement refund workflow service in `backend/internal/service/refund.go`
-- [ ] T136 Implement admin order handlers in `backend/internal/handler/admin_order.go`
-- [ ] T137 Write refund service tests (100% coverage)
+- [x] T132 Create `refund_requests` table migration in `backend/migrations/015_refund_requests.up.sql`
+- [x] T133 Implement RefundRequest domain model in `backend/internal/domain/refund.go`
+- [x] T134 Implement order query endpoints in `backend/internal/handler/order_query.go`
+- [x] T135 Implement refund workflow service in `backend/internal/service/refund.go`
+- [x] T136 Implement admin order handlers in `backend/internal/handler/admin_order.go`
+- [x] T137 Write refund service tests (100% coverage)
 
 ### Frontend - Customer
 
-- [ ] T138 Create My Orders page in `frontend-web/pages/orders/index.vue`
-- [ ] T139 Create Order detail page in `frontend-web/pages/orders/[id].vue`
-- [ ] T140 Create refund request form in `frontend-web/components/RefundRequest.vue`
-- [ ] T141 Write order management E2E tests (100% coverage)
+- [x] T138 Create My Orders page in `frontend-web/pages/orders/index.vue`
+- [x] T139 Create Order detail page in `frontend-web/pages/orders/[id].vue`
+- [x] T140 Create refund request form in `frontend-web/components/RefundRequest.vue`
+- [x] T141 Write order management E2E tests (100% coverage)
 
 ### Frontend - Admin
 
-- [ ] T142 Create Order management list in `frontend-admin/pages/orders/index.vue`
-- [ ] T143 Create Order detail view in `frontend-admin/pages/orders/[id].vue`
-- [ ] T144 Create Refund approval interface in `frontend-admin/pages/refunds/index.vue`
+- [x] T142 Create Order management list in `frontend-admin/pages/orders/index.vue`
+- [x] T143 Create Order detail view in `frontend-admin/pages/orders/[id].vue`
+- [x] T144 Create Refund approval interface in `frontend-admin/pages/refunds/index.vue`
 
 ---
 

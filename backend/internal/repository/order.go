@@ -49,6 +49,20 @@ type OrderRepository interface {
 	GetPaymentByID(ctx context.Context, id string) (*domain.Payment, error)
 	GetPaymentByNo(ctx context.Context, paymentNo string) (*domain.Payment, error)
 	UpdatePayment(ctx context.Context, payment *domain.Payment) error
+
+	// Refund operations
+	CreateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error
+	GetRefundRequestByID(ctx context.Context, id string) (*domain.RefundRequest, error)
+	ListRefundRequests(ctx context.Context, filters RefundFilters, paginator *pagination.Paginator) ([]*domain.RefundRequest, error)
+	UpdateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error
+}
+
+// RefundFilters represents filters for refund queries
+type RefundFilters struct {
+	OrderID    string
+	UserID     string
+	Status     string
+	ReviewedBy string
 }
 
 // OrderFilters represents filters for order queries
@@ -367,6 +381,55 @@ func (r *orderRepository) GetPaymentByNo(ctx context.Context, paymentNo string) 
 
 func (r *orderRepository) UpdatePayment(ctx context.Context, payment *domain.Payment) error {
 	return r.db.WithContext(ctx).Save(payment).Error
+}
+
+// ==================== Refund Operations ====================
+
+func (r *orderRepository) CreateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error {
+	return r.db.WithContext(ctx).Create(refund).Error
+}
+
+func (r *orderRepository) GetRefundRequestByID(ctx context.Context, id string) (*domain.RefundRequest, error) {
+	var refund domain.RefundRequest
+	err := r.db.WithContext(ctx).
+		Preload("Order").
+		Preload("OrderItem").
+		First(&refund, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &refund, nil
+}
+
+func (r *orderRepository) ListRefundRequests(ctx context.Context, filters RefundFilters, paginator *pagination.Paginator) ([]*domain.RefundRequest, error) {
+	query := r.db.Model(&domain.RefundRequest{})
+
+	if filters.OrderID != "" {
+		query = query.Where("order_id = ?", filters.OrderID)
+	}
+	if filters.UserID != "" {
+		query = query.Where("user_id = ?", filters.UserID)
+	}
+	if filters.Status != "" {
+		query = query.Where("status = ?", filters.Status)
+	}
+	if filters.ReviewedBy != "" {
+		query = query.Where("reviewed_by = ?", filters.ReviewedBy)
+	}
+
+	var refunds []*domain.RefundRequest
+	err := query.WithContext(ctx).
+		Preload("Order").
+		Order("requested_at DESC").
+		Offset(paginator.Offset()).
+		Limit(paginator.Limit()).
+		Find(&refunds).Error
+
+	return refunds, err
+}
+
+func (r *orderRepository) UpdateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error {
+	return r.db.WithContext(ctx).Save(refund).Error
 }
 
 // Helper function
