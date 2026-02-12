@@ -20,10 +20,10 @@
 | 7 | US5: User Auth | P2 | ✅ Complete | 14/14 (100%) |
 | 8 | US6: Notifications | P2 | ✅ Complete | 10/10 (100%) |
 | 9 | US7: Smart Features | P3 | ✅ Complete | 12/12 (100%) |
-| 10 | US8: Social Features | P3 | ⏳ Pending | 0/10 (0%) |
-| 11 | Polish | - | ⏳ Pending | 0/8 (0%) |
+| 10 | US8: Social Features | P3 | ✅ Complete | 10/10 (100%) |
+| 11 | Polish | - | ✅ Complete | 18/18 (100%) |
 
-**Total Progress**: 150/206 (72.8%)
+**Total Progress**: 178/206 (86.4%)
 
 ### Phase 1-4 Completion Summary
 
@@ -492,20 +492,20 @@
 
 ### Backend
 
-- [ ] T178 Create `travelogues` table migration in `backend/migrations/019_travelogues.up.sql`
-- [ ] T179 Implement Travelogue domain model in `backend/internal/domain/travelogue.go`
-- [ ] T180 Implement review system in `backend/internal/service/review.go`
-- [ ] T181 Implement poster generation service in `backend/internal/service/poster.go`
-- [ ] T182 Implement invitation system in `backend/internal/service/invitation.go`
-- [ ] T183 Write social feature tests (100% coverage)
+- [x] T178 Create `travelogues` table migration in `backend/migrations/020_travelogues.up.sql`
+- [x] T179 Implement Travelogue domain model in `backend/internal/domain/travelogue.go`
+- [x] T180 Implement review system in `backend/internal/service/review.go`
+- [x] T181 Implement poster generation service in `backend/internal/service/poster.go`
+- [x] T182 Implement invitation system in `backend/internal/service/invitation.go`
+- [x] T183 Write social feature tests (100% coverage)
 
 ### Frontend
 
-- [ ] T184 Create review form in `frontend-web/components/ReviewForm.vue`
-- [ ] T185 Create travelogue editor in `frontend-web/components/TravelogueEditor.vue`
-- [ ] T186 Create community page in `frontend-web/pages/community/index.vue`
-- [ ] T187 Create share poster modal in `frontend-web/components/SharePoster.vue`
-- [ ] T188 Write social features E2E tests (100% coverage)
+- [x] T184 Create review form in `frontend-web/components/ReviewForm.vue`
+- [x] T185 Create travelogue editor in `frontend-web/components/TravelogueEditor.vue`
+- [x] T186 Create community page in `frontend-web/pages/community/index.vue`
+- [x] T187 Create share poster modal in `frontend-web/components/SharePoster.vue`
+- [x] T188 Write social features E2E tests (100% coverage)
 
 ---
 
@@ -516,33 +516,33 @@
 
 ### Performance & Optimization
 
-- [ ] T189 Implement Redis caching layer in `backend/internal/cache/`
-- [ ] T190 Setup Meilisearch indexing for cruises and cabins
-- [ ] T191 Implement database query optimization
-- [ ] T192 Add API rate limiting middleware
-- [ ] T193 Implement frontend code splitting and lazy loading
+- [x] T189 Implement Redis caching layer in `backend/internal/cache/`
+- [x] T190 Setup Meilisearch indexing for cruises and cabins
+- [x] T191 Implement database query optimization
+- [x] T192 Add API rate limiting middleware
+- [x] T193 Implement frontend code splitting and lazy loading
 
 ### Monitoring & Observability
 
-- [ ] T194 Setup Prometheus metrics collection
-- [ ] T195 Create Grafana dashboards
-- [ ] T196 Configure Loki log aggregation
-- [ ] T197 Implement distributed tracing
-- [ ] T198 Setup health check endpoints
+- [x] T194 Setup Prometheus metrics collection
+- [x] T195 Create Grafana dashboards
+- [x] T196 Configure Loki log aggregation
+- [x] T197 Implement distributed tracing
+- [x] T198 Setup health check endpoints
 
 ### Security & Compliance
 
-- [ ] T199 Implement API request signing
-- [ ] T200 Add SQL injection prevention tests
-- [ ] T201 Conduct security audit
-- [ ] T202 Implement GDPR data export/deletion
+- [x] T199 Implement API request signing
+- [x] T200 Add SQL injection prevention tests
+- [x] T201 Conduct security audit
+- [x] T202 Implement GDPR data export/deletion
 
 ### Documentation
 
-- [ ] T203 Complete API documentation with examples
-- [ ] T204 Create deployment guide
-- [ ] T205 Write operation runbook
-- [ ] T206 Create user manual
+- [x] T203 Complete API documentation with examples
+- [x] T204 Create deployment guide
+- [x] T205 Write operation runbook
+- [x] T206 Create user manual
 
 ---
 
