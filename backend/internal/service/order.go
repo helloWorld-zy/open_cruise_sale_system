@@ -173,6 +173,34 @@ func NewOrderService(
 	}
 }
 
+// itemSubtotal holds the breakdown of a calculated item subtotal
+// CS-003: Extracted from duplicated logic in Create and CalculateTotal
+type itemSubtotal struct {
+	AdultTotal  float64
+	ChildTotal  float64
+	InfantTotal float64
+	PortFee     float64
+	ServiceFee  float64
+	Subtotal    float64
+}
+
+// calculateItemSubtotal computes the price breakdown for a single order item
+func calculateItemSubtotal(price *domain.CabinPrice, adultCount, childCount, infantCount int) itemSubtotal {
+	adultTotal := price.AdultPrice * float64(adultCount)
+	childTotal := price.ChildPrice * float64(childCount)
+	infantTotal := price.InfantPrice * float64(infantCount)
+	portFee := price.PortFee * float64(adultCount+childCount)
+	serviceFee := price.ServiceFee * float64(adultCount+childCount)
+	return itemSubtotal{
+		AdultTotal:  adultTotal,
+		ChildTotal:  childTotal,
+		InfantTotal: infantTotal,
+		PortFee:     portFee,
+		ServiceFee:  serviceFee,
+		Subtotal:    adultTotal + childTotal + infantTotal + portFee + serviceFee,
+	}
+}
+
 func (s *orderService) Create(ctx context.Context, req CreateOrderRequest) (*domain.Order, error) {
 	// Validate voyage exists
 	voyage, err := s.voyageRepo.GetByID(ctx, req.VoyageID)
@@ -194,11 +222,8 @@ func (s *orderService) Create(ctx context.Context, req CreateOrderRequest) (*dom
 		return nil, ErrInvalidPassengerCount
 	}
 
-	// Calculate total and lock inventory for each item
-	var totalAmount float64
-	var cabinCount int
 	now := time.Now().UTC()
-	expiresAt := now.Add(30 * time.Minute) // 30 minutes to pay
+	expiresAt := now.Add(15 * time.Minute) // 15 minutes to pay (aligned with lock timeout)
 
 	order := &domain.Order{
 		OrderNumber:    generateOrderNumber(),
@@ -219,111 +244,118 @@ func (s *orderService) Create(ctx context.Context, req CreateOrderRequest) (*dom
 		order.UserID = &req.UserID
 	}
 
-	// Create order first
-	if err := s.orderRepo.Create(ctx, order); err != nil {
-		return nil, fmt.Errorf("failed to create order: %w", err)
-	}
-
-	// Process each item and lock inventory
-	for _, itemReq := range req.Items {
-		// Get cabin
-		cabin, err := s.cabinRepo.GetByID(ctx, itemReq.CabinID)
-		if err != nil {
-			return nil, fmt.Errorf("cabin not found: %w", err)
+	// DD-001: Wrap entire order creation in a database transaction
+	err = s.orderRepo.WithTransaction(ctx, func(txRepo repository.OrderRepository) error {
+		// Create order
+		if err := txRepo.Create(ctx, order); err != nil {
+			return fmt.Errorf("failed to create order: %w", err)
 		}
 
-		if cabin.Status != domain.CabinStatusAvailable {
-			return nil, ErrCabinNotAvailable
+		var totalAmount float64
+		var cabinCount int
+
+		// Process each item and lock inventory
+		for _, itemReq := range req.Items {
+			// Get cabin
+			cabin, err := s.cabinRepo.GetByID(ctx, itemReq.CabinID)
+			if err != nil {
+				return fmt.Errorf("cabin not found: %w", err)
+			}
+
+			if cabin.Status != domain.CabinStatusAvailable {
+				return ErrCabinNotAvailable
+			}
+
+			// Get price
+			price, err := s.priceRepo.GetCurrentPrice(ctx, req.VoyageID, itemReq.CabinTypeID)
+			if err != nil {
+				return fmt.Errorf("price not found: %w", err)
+			}
+
+			// Lock inventory
+			if err := s.inventoryRepo.LockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1); err != nil {
+				return fmt.Errorf("failed to lock cabin: %w", err)
+			}
+
+			// CS-003: Use extracted helper for price calculation
+			calc := calculateItemSubtotal(price, itemReq.AdultCount, itemReq.ChildCount, itemReq.InfantCount)
+
+			orderItem := &domain.OrderItem{
+				OrderID:       order.ID.String(),
+				CabinID:       itemReq.CabinID,
+				CabinTypeID:   itemReq.CabinTypeID,
+				VoyageID:      req.VoyageID,
+				CabinNumber:   cabin.CabinNumber,
+				PriceSnapshot: price.AdultPrice,
+				AdultCount:    itemReq.AdultCount,
+				ChildCount:    itemReq.ChildCount,
+				InfantCount:   itemReq.InfantCount,
+				AdultPrice:    price.AdultPrice,
+				ChildPrice:    price.ChildPrice,
+				InfantPrice:   price.InfantPrice,
+				PortFee:       calc.PortFee,
+				ServiceFee:    calc.ServiceFee,
+				Subtotal:      calc.Subtotal,
+				Status:        domain.OrderItemStatusConfirmed,
+			}
+
+			if err := txRepo.CreateOrderItem(ctx, orderItem); err != nil {
+				// Transaction will auto-rollback; also unlock inventory
+				s.inventoryRepo.UnlockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1)
+				return fmt.Errorf("failed to create order item: %w", err)
+			}
+
+			totalAmount += calc.Subtotal
+			cabinCount++
 		}
 
-		// Get price
-		price, err := s.priceRepo.GetCurrentPrice(ctx, req.VoyageID, itemReq.CabinTypeID)
-		if err != nil {
-			return nil, fmt.Errorf("price not found: %w", err)
+		// Update order total
+		order.TotalAmount = totalAmount
+		order.CabinCount = cabinCount
+		if err := txRepo.Update(ctx, order); err != nil {
+			return fmt.Errorf("failed to update order total: %w", err)
 		}
 
-		// Lock inventory
-		if err := s.inventoryRepo.LockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1); err != nil {
-			return nil, fmt.Errorf("failed to lock cabin: %w", err)
+		// Create passengers
+		var passengers []*domain.Passenger
+		for i, p := range req.Passengers {
+			passenger := &domain.Passenger{
+				OrderID:               order.ID.String(),
+				Name:                  p.Name,
+				Surname:               p.Surname,
+				GivenName:             p.GivenName,
+				Gender:                p.Gender,
+				BirthDate:             p.BirthDate,
+				Nationality:           p.Nationality,
+				PassportNumber:        p.PassportNumber,
+				PassportExpiry:        p.PassportExpiry,
+				IDNumber:              p.IDNumber,
+				Phone:                 p.Phone,
+				Email:                 p.Email,
+				PassengerType:         p.PassengerType,
+				EmergencyContactName:  p.EmergencyContactName,
+				EmergencyContactPhone: p.EmergencyContactPhone,
+				DietaryRequirements:   p.DietaryRequirements,
+				MedicalNotes:          p.MedicalNotes,
+			}
+
+			// Associate passenger with corresponding order item
+			if i < len(order.Items) {
+				passenger.OrderItemID = order.Items[i].ID.String()
+			}
+
+			passengers = append(passengers, passenger)
 		}
 
-		// Calculate subtotal
-		adultTotal := price.AdultPrice * float64(itemReq.AdultCount)
-		childTotal := price.ChildPrice * float64(itemReq.ChildCount)
-		infantTotal := price.InfantPrice * float64(itemReq.InfantCount)
-		portFee := price.PortFee * float64(itemReq.AdultCount+itemReq.ChildCount)
-		serviceFee := price.ServiceFee * float64(itemReq.AdultCount+itemReq.ChildCount)
-		subtotal := adultTotal + childTotal + infantTotal + portFee + serviceFee
-
-		orderItem := &domain.OrderItem{
-			OrderID:       order.ID,
-			CabinID:       itemReq.CabinID,
-			CabinTypeID:   itemReq.CabinTypeID,
-			VoyageID:      req.VoyageID,
-			CabinNumber:   cabin.CabinNumber,
-			PriceSnapshot: price.AdultPrice,
-			AdultCount:    itemReq.AdultCount,
-			ChildCount:    itemReq.ChildCount,
-			InfantCount:   itemReq.InfantCount,
-			AdultPrice:    price.AdultPrice,
-			ChildPrice:    price.ChildPrice,
-			InfantPrice:   price.InfantPrice,
-			PortFee:       portFee,
-			ServiceFee:    serviceFee,
-			Subtotal:      subtotal,
-			Status:        domain.OrderItemStatusConfirmed,
+		if err := txRepo.BatchCreatePassengers(ctx, passengers); err != nil {
+			return fmt.Errorf("failed to create passengers: %w", err)
 		}
 
-		if err := s.orderRepo.CreateOrderItem(ctx, orderItem); err != nil {
-			// Try to unlock inventory on failure
-			s.inventoryRepo.UnlockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1)
-			return nil, fmt.Errorf("failed to create order item: %w", err)
-		}
+		return nil
+	})
 
-		totalAmount += subtotal
-		cabinCount++
-	}
-
-	// Update order total
-	order.TotalAmount = totalAmount
-	order.CabinCount = cabinCount
-	if err := s.orderRepo.Update(ctx, order); err != nil {
-		return nil, fmt.Errorf("failed to update order total: %w", err)
-	}
-
-	// Create passengers
-	var passengers []*domain.Passenger
-	for i, p := range req.Passengers {
-		passenger := &domain.Passenger{
-			OrderID:               order.ID,
-			Name:                  p.Name,
-			Surname:               p.Surname,
-			GivenName:             p.GivenName,
-			Gender:                p.Gender,
-			BirthDate:             p.BirthDate,
-			Nationality:           p.Nationality,
-			PassportNumber:        p.PassportNumber,
-			PassportExpiry:        p.PassportExpiry,
-			IDNumber:              p.IDNumber,
-			Phone:                 p.Phone,
-			Email:                 p.Email,
-			PassengerType:         p.PassengerType,
-			EmergencyContactName:  p.EmergencyContactName,
-			EmergencyContactPhone: p.EmergencyContactPhone,
-			DietaryRequirements:   p.DietaryRequirements,
-			MedicalNotes:          p.MedicalNotes,
-		}
-
-		// Associate passenger with corresponding order item
-		if i < len(order.Items) {
-			passenger.OrderItemID = order.Items[i].ID
-		}
-
-		passengers = append(passengers, passenger)
-	}
-
-	if err := s.orderRepo.BatchCreatePassengers(ctx, passengers); err != nil {
-		return nil, fmt.Errorf("failed to create passengers: %w", err)
+	if err != nil {
+		return nil, err
 	}
 
 	return order, nil
@@ -477,26 +509,22 @@ func (s *orderService) CalculateTotal(ctx context.Context, items []OrderItemRequ
 			return calculation, fmt.Errorf("price not found for cabin type %s: %w", item.CabinTypeID, err)
 		}
 
-		adultTotal := price.AdultPrice * float64(item.AdultCount)
-		childTotal := price.ChildPrice * float64(item.ChildCount)
-		infantTotal := price.InfantPrice * float64(item.InfantCount)
-		portFee := price.PortFee * float64(item.AdultCount+item.ChildCount)
-		serviceFee := price.ServiceFee * float64(item.AdultCount+item.ChildCount)
-		subtotal := adultTotal + childTotal + infantTotal + portFee + serviceFee
+		// CS-003: Use extracted helper for price calculation
+		calc := calculateItemSubtotal(price, item.AdultCount, item.ChildCount, item.InfantCount)
 
 		calculation.Items = append(calculation.Items, ItemCalculation{
 			CabinTypeID: item.CabinTypeID,
-			AdultPrice:  adultTotal,
-			ChildPrice:  childTotal,
-			InfantPrice: infantTotal,
-			PortFee:     portFee,
-			ServiceFee:  serviceFee,
-			Subtotal:    subtotal,
+			AdultPrice:  calc.AdultTotal,
+			ChildPrice:  calc.ChildTotal,
+			InfantPrice: calc.InfantTotal,
+			PortFee:     calc.PortFee,
+			ServiceFee:  calc.ServiceFee,
+			Subtotal:    calc.Subtotal,
 		})
 
-		calculation.Subtotal += adultTotal + childTotal + infantTotal
-		calculation.PortFee += portFee
-		calculation.ServiceFee += serviceFee
+		calculation.Subtotal += calc.AdultTotal + calc.ChildTotal + calc.InfantTotal
+		calculation.PortFee += calc.PortFee
+		calculation.ServiceFee += calc.ServiceFee
 	}
 
 	calculation.TotalAmount = calculation.Subtotal + calculation.PortFee + calculation.ServiceFee - calculation.DiscountAmount

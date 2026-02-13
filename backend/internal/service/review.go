@@ -26,13 +26,13 @@ type ReviewService interface {
 	Create(ctx context.Context, req CreateReviewRequest) (*domain.Review, error)
 
 	// GetByID retrieves a review by ID
-	GetByID(ctx context.Context, id uint64) (*domain.Review, error)
+	GetByID(ctx context.Context, id string) (*domain.Review, error)
 
 	// List retrieves reviews with filters
 	List(ctx context.Context, req ListReviewsRequest) (*pagination.Result, error)
 
 	// ListByUser retrieves reviews by a specific user
-	ListByUser(ctx context.Context, userID uint64, paginator *pagination.Paginator) (*pagination.Result, error)
+	ListByUser(ctx context.Context, userID string, paginator *pagination.Paginator) (*pagination.Result, error)
 
 	// ListByCruise retrieves reviews for a cruise
 	ListByCruise(ctx context.Context, cruiseID string, paginator *pagination.Paginator) (*pagination.Result, error)
@@ -41,36 +41,36 @@ type ReviewService interface {
 	ListByVoyage(ctx context.Context, voyageID string, paginator *pagination.Paginator) (*pagination.Result, error)
 
 	// Update updates a review
-	Update(ctx context.Context, id uint64, req UpdateReviewRequest) (*domain.Review, error)
+	Update(ctx context.Context, id string, req UpdateReviewRequest) (*domain.Review, error)
 
 	// Delete deletes a review
-	Delete(ctx context.Context, id uint64) error
+	Delete(ctx context.Context, id string) error
 
 	// Helpful marks a review as helpful
-	Helpful(ctx context.Context, reviewID uint64, userID uint64) error
+	Helpful(ctx context.Context, reviewID string, userID string) error
 
 	// Unhelpful removes helpful mark
-	Unhelpful(ctx context.Context, reviewID uint64, userID uint64) error
+	Unhelpful(ctx context.Context, reviewID string, userID string) error
 
 	// Reply adds admin reply to review
-	Reply(ctx context.Context, reviewID uint64, reply string) error
+	Reply(ctx context.Context, reviewID string, reply string) error
 
 	// Approve approves a pending review
-	Approve(ctx context.Context, reviewID uint64) error
+	Approve(ctx context.Context, reviewID string) error
 
 	// Reject rejects a pending review
-	Reject(ctx context.Context, reviewID uint64, reason string) error
+	Reject(ctx context.Context, reviewID string, reason string) error
 
 	// GetReviewStats gets review statistics for a cruise or voyage
-	GetReviewStats(ctx context.Context, cruiseID *string, voyageID *string) (*ReviewStats, error)
+	GetReviewStats(ctx context.Context, cruiseID *string, voyageID *string) (*domain.ReviewStats, error)
 }
 
 // CreateReviewRequest represents a request to create a review
 type CreateReviewRequest struct {
-	UserID      uint64   `json:"user_id" validate:"required"`
-	VoyageID    *uint64  `json:"voyage_id,omitempty"`
-	CruiseID    *uint64  `json:"cruise_id,omitempty"`
-	OrderID     *uint64  `json:"order_id,omitempty"`
+	UserID      string   `json:"user_id" validate:"required"`
+	VoyageID    *string  `json:"voyage_id,omitempty"`
+	CruiseID    *string  `json:"cruise_id,omitempty"`
+	OrderID     *string  `json:"order_id,omitempty"`
 	Rating      int      `json:"rating" validate:"required,min=1,max=5"`
 	Title       string   `json:"title" validate:"required,max=200"`
 	Content     string   `json:"content" validate:"required,min=10,max=5000"`
@@ -94,7 +94,7 @@ type UpdateReviewRequest struct {
 type ListReviewsRequest struct {
 	CruiseID   *string
 	VoyageID   *string
-	UserID     *uint64
+	UserID     *string
 	Status     string
 	IsVerified *bool
 	MinRating  *int
@@ -102,19 +102,6 @@ type ListReviewsRequest struct {
 	SortBy     string // rating, date, helpful
 	SortOrder  string // asc, desc
 	*pagination.Paginator
-}
-
-// ReviewStats represents review statistics
-type ReviewStats struct {
-	TotalReviews       int         `json:"total_reviews"`
-	AverageRating      float64     `json:"average_rating"`
-	FiveStarCount      int         `json:"five_star_count"`
-	FourStarCount      int         `json:"four_star_count"`
-	ThreeStarCount     int         `json:"three_star_count"`
-	TwoStarCount       int         `json:"two_star_count"`
-	OneStarCount       int         `json:"one_star_count"`
-	RatingDistribution map[int]int `json:"rating_distribution"`
-	VerifiedCount      int         `json:"verified_count"`
 }
 
 // reviewService implements ReviewService
@@ -141,13 +128,13 @@ func NewReviewService(
 func (s *reviewService) Create(ctx context.Context, req CreateReviewRequest) (*domain.Review, error) {
 	// Verify order if provided
 	if req.OrderID != nil {
-		order, err := s.orderRepo.GetByID(ctx, fmt.Sprintf("%d", *req.OrderID))
+		order, err := s.orderRepo.GetByID(ctx, *req.OrderID)
 		if err != nil {
 			return nil, ErrOrderNotFound
 		}
 
 		// Check if user owns this order
-		if order.UserID != fmt.Sprintf("%d", req.UserID) {
+		if order.UserID != nil && *order.UserID != req.UserID {
 			return nil, ErrUnauthorizedReview
 		}
 
@@ -162,8 +149,9 @@ func (s *reviewService) Create(ctx context.Context, req CreateReviewRequest) (*d
 			return nil, ErrDuplicateReview
 		}
 
-		// Set verified purchase
-		req.CruiseID = &order.CruiseID
+		// Set verified purchase (CruiseID is string in Order)
+		cruiseID := order.CruiseID // string
+		req.CruiseID = &cruiseID
 	}
 
 	// Marshal arrays to JSON
@@ -195,7 +183,7 @@ func (s *reviewService) Create(ctx context.Context, req CreateReviewRequest) (*d
 }
 
 // GetByID retrieves a review by ID
-func (s *reviewService) GetByID(ctx context.Context, id uint64) (*domain.Review, error) {
+func (s *reviewService) GetByID(ctx context.Context, id string) (*domain.Review, error) {
 	review, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, ErrReviewNotFound
@@ -219,7 +207,7 @@ func (s *reviewService) List(ctx context.Context, req ListReviewsRequest) (*pagi
 }
 
 // ListByUser retrieves reviews by a specific user
-func (s *reviewService) ListByUser(ctx context.Context, userID uint64, paginator *pagination.Paginator) (*pagination.Result, error) {
+func (s *reviewService) ListByUser(ctx context.Context, userID string, paginator *pagination.Paginator) (*pagination.Result, error) {
 	filters := repository.ReviewFilters{
 		UserID: &userID,
 		Status: domain.ReviewStatusApproved,
@@ -246,7 +234,7 @@ func (s *reviewService) ListByVoyage(ctx context.Context, voyageID string, pagin
 }
 
 // Update updates a review
-func (s *reviewService) Update(ctx context.Context, id uint64, req UpdateReviewRequest) (*domain.Review, error) {
+func (s *reviewService) Update(ctx context.Context, id string, req UpdateReviewRequest) (*domain.Review, error) {
 	review, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, ErrReviewNotFound
@@ -283,7 +271,7 @@ func (s *reviewService) Update(ctx context.Context, id uint64, req UpdateReviewR
 }
 
 // Delete deletes a review
-func (s *reviewService) Delete(ctx context.Context, id uint64) error {
+func (s *reviewService) Delete(ctx context.Context, id string) error {
 	_, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return ErrReviewNotFound
@@ -293,7 +281,7 @@ func (s *reviewService) Delete(ctx context.Context, id uint64) error {
 }
 
 // Helpful marks a review as helpful
-func (s *reviewService) Helpful(ctx context.Context, reviewID uint64, userID uint64) error {
+func (s *reviewService) Helpful(ctx context.Context, reviewID string, userID string) error {
 	review, err := s.reviewRepo.GetByID(ctx, reviewID)
 	if err != nil {
 		return ErrReviewNotFound
@@ -309,7 +297,7 @@ func (s *reviewService) Helpful(ctx context.Context, reviewID uint64, userID uin
 }
 
 // Unhelpful removes helpful mark
-func (s *reviewService) Unhelpful(ctx context.Context, reviewID uint64, userID uint64) error {
+func (s *reviewService) Unhelpful(ctx context.Context, reviewID string, userID string) error {
 	review, err := s.reviewRepo.GetByID(ctx, reviewID)
 	if err != nil {
 		return ErrReviewNotFound
@@ -328,7 +316,7 @@ func (s *reviewService) Unhelpful(ctx context.Context, reviewID uint64, userID u
 }
 
 // Reply adds admin reply to review
-func (s *reviewService) Reply(ctx context.Context, reviewID uint64, reply string) error {
+func (s *reviewService) Reply(ctx context.Context, reviewID string, reply string) error {
 	review, err := s.reviewRepo.GetByID(ctx, reviewID)
 	if err != nil {
 		return ErrReviewNotFound
@@ -339,7 +327,7 @@ func (s *reviewService) Reply(ctx context.Context, reviewID uint64, reply string
 }
 
 // Approve approves a pending review
-func (s *reviewService) Approve(ctx context.Context, reviewID uint64) error {
+func (s *reviewService) Approve(ctx context.Context, reviewID string) error {
 	review, err := s.reviewRepo.GetByID(ctx, reviewID)
 	if err != nil {
 		return ErrReviewNotFound
@@ -350,7 +338,7 @@ func (s *reviewService) Approve(ctx context.Context, reviewID uint64) error {
 }
 
 // Reject rejects a pending review
-func (s *reviewService) Reject(ctx context.Context, reviewID uint64, reason string) error {
+func (s *reviewService) Reject(ctx context.Context, reviewID string, reason string) error {
 	review, err := s.reviewRepo.GetByID(ctx, reviewID)
 	if err != nil {
 		return ErrReviewNotFound
@@ -363,6 +351,6 @@ func (s *reviewService) Reject(ctx context.Context, reviewID uint64, reason stri
 }
 
 // GetReviewStats gets review statistics
-func (s *reviewService) GetReviewStats(ctx context.Context, cruiseID *string, voyageID *string) (*ReviewStats, error) {
+func (s *reviewService) GetReviewStats(ctx context.Context, cruiseID *string, voyageID *string) (*domain.ReviewStats, error) {
 	return s.reviewRepo.GetStats(ctx, cruiseID, voyageID)
 }

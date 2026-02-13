@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/internal/config"
 	"backend/internal/handler"
 	"backend/internal/middleware"
 
@@ -8,10 +9,10 @@ import (
 )
 
 // setupAdminRoutes configures admin API routes with RBAC protection
-func setupAdminRoutes(r *gin.Engine, handlers *AdminHandlers) {
+func setupAdminRoutes(r *gin.Engine, handlers *AdminHandlers, cfg *config.Config) {
 	// Admin API group with authentication and authorization
 	admin := r.Group("/api/v1/admin")
-	admin.Use(middleware.JWTAuth())
+	admin.Use(middleware.JWTAuth(&cfg.JWT))
 	admin.Use(middleware.RequireRole("super_admin", "operations"))
 	{
 		// Cruise management

@@ -1,16 +1,18 @@
 package main
 
 import (
+	"backend/internal/config"
 	"backend/internal/handler"
 	"backend/internal/repository"
 	"backend/internal/service"
+	"backend/internal/storage"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 // setupRoutes configures all API routes
-func setupRoutes(r *gin.Engine, db *gorm.DB) {
+func setupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Initialize repositories
 	cruiseRepo := repository.NewCruiseRepository(db)
 	cabinTypeRepo := repository.NewCabinTypeRepository(db)
@@ -23,11 +25,31 @@ func setupRoutes(r *gin.Engine, db *gorm.DB) {
 	facilityService := service.NewFacilityService(facilityRepo, facilityCategoryRepo)
 	facilityCategoryService := service.NewFacilityCategoryService(facilityCategoryRepo)
 
+	// Initialize MinIO client
+	minioClient, err := storage.New(cfg.MinIO)
+	if err != nil {
+		// Log error but continue (or panic depending on requirement)
+		// For now we panic to ensure valid configuration
+		panic(err)
+	}
+	storageService := service.NewStorageService(minioClient, cfg.MinIO.Endpoint)
+
 	// Initialize handlers
 	cruiseHandler := handler.NewCruiseHandler(cruiseService)
 	cabinTypeHandler := handler.NewCabinTypeHandler(cabinTypeService)
 	facilityHandler := handler.NewFacilityHandler(facilityService)
 	facilityCategoryHandler := handler.NewFacilityCategoryHandler(facilityCategoryService)
+
+	// Initialize admin handlers
+	adminHandlers := &AdminHandlers{
+		AdminCruise:           handler.NewAdminCruiseHandler(cruiseService, storageService),
+		AdminCabinType:        handler.NewAdminCabinTypeHandler(cabinTypeService),
+		AdminFacility:         handler.NewAdminFacilityHandler(facilityService),
+		AdminFacilityCategory: handler.NewAdminFacilityCategoryHandler(facilityCategoryService),
+	}
+
+	// Setup admin routes
+	setupAdminRoutes(r, adminHandlers, cfg)
 
 	// API v1 group
 	v1 := r.Group("/api/v1")

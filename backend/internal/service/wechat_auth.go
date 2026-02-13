@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 )
 
 var (
@@ -73,7 +72,7 @@ func (s *WechatAuthService) WechatLogin(ctx context.Context, code string) (*Wech
 			return nil, fmt.Errorf("failed to create user: %w", err)
 		}
 
-		tokens, err := s.jwtSvc.GenerateTokenPair(user.ID)
+		tokens, err := s.jwtSvc.GenerateTokenPair(user.ID.String())
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +94,7 @@ func (s *WechatAuthService) WechatLogin(ctx context.Context, code string) (*Wech
 	user.UpdateLastLogin("") // IP will be set by handler
 	s.repo.Update(ctx, user)
 
-	tokens, err := s.jwtSvc.GenerateTokenPair(user.ID)
+	tokens, err := s.jwtSvc.GenerateTokenPair(user.ID.String())
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +153,7 @@ func (s *WechatAuthService) WechatPhoneLogin(ctx context.Context, code, encrypte
 		s.repo.Update(ctx, user)
 	}
 
-	tokens, err := s.jwtSvc.GenerateTokenPair(user.ID)
+	tokens, err := s.jwtSvc.GenerateTokenPair(user.ID.String())
 	if err != nil {
 		return nil, err
 	}

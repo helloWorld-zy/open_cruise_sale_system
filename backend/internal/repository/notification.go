@@ -4,28 +4,32 @@ import (
 	"backend/internal/domain"
 	"backend/internal/pagination"
 	"context"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
 )
 
+// ErrRecordNotFound is returned when a database record is not found
+var ErrRecordNotFound = errors.New("record not found")
+
 // NotificationRepository defines the interface for notification data operations
 type NotificationRepository interface {
 	// Notification CRUD
 	Create(ctx context.Context, notification *domain.Notification) error
-	GetByID(ctx context.Context, id uint64) (*domain.Notification, error)
-	List(ctx context.Context, userID uint64, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error)
-	GetUnreadCount(ctx context.Context, userID uint64) (int64, error)
+	GetByID(ctx context.Context, id string) (*domain.Notification, error)
+	List(ctx context.Context, userID string, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error)
+	GetUnreadCount(ctx context.Context, userID string) (int64, error)
 	Update(ctx context.Context, notification *domain.Notification) error
-	Delete(ctx context.Context, id uint64) error
+	Delete(ctx context.Context, id string) error
 
 	// Batch operations
-	MarkAllAsRead(ctx context.Context, userID uint64) error
-	DeleteAllRead(ctx context.Context, userID uint64) error
+	MarkAllAsRead(ctx context.Context, userID string) error
+	DeleteAllRead(ctx context.Context, userID string) error
 	DeleteOldNotifications(ctx context.Context, days int) error
 
 	// Settings
-	GetOrCreateSettings(ctx context.Context, userID uint64) (*domain.NotificationSetting, error)
+	GetOrCreateSettings(ctx context.Context, userID string) (*domain.NotificationSetting, error)
 	UpdateSettings(ctx context.Context, settings *domain.NotificationSetting) error
 
 	// For retry jobs
@@ -48,7 +52,7 @@ func (r *notificationRepository) Create(ctx context.Context, notification *domai
 }
 
 // GetByID retrieves a notification by ID
-func (r *notificationRepository) GetByID(ctx context.Context, id uint64) (*domain.Notification, error) {
+func (r *notificationRepository) GetByID(ctx context.Context, id string) (*domain.Notification, error) {
 	var notification domain.Notification
 	err := r.db.WithContext(ctx).First(&notification, id).Error
 	if err != nil {
@@ -61,7 +65,7 @@ func (r *notificationRepository) GetByID(ctx context.Context, id uint64) (*domai
 }
 
 // List retrieves notifications for a user
-func (r *notificationRepository) List(ctx context.Context, userID uint64, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error) {
+func (r *notificationRepository) List(ctx context.Context, userID string, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error) {
 	query := r.db.WithContext(ctx).Model(&domain.Notification{}).Where("user_id = ? AND is_archived = ?", userID, false)
 
 	if unreadOnly {
@@ -82,17 +86,13 @@ func (r *notificationRepository) List(ctx context.Context, userID uint64, pagina
 		return nil, err
 	}
 
-	return &pagination.Result{
-		Data:       notifications,
-		Total:      total,
-		Page:       paginator.Page,
-		PageSize:   paginator.PageSize,
-		TotalPages: paginator.TotalPages(total),
-	}, nil
+	paginator.SetTotal(total)
+	result := pagination.NewResult(notifications, *paginator)
+	return &result, nil
 }
 
 // GetUnreadCount gets the count of unread notifications
-func (r *notificationRepository) GetUnreadCount(ctx context.Context, userID uint64) (int64, error) {
+func (r *notificationRepository) GetUnreadCount(ctx context.Context, userID string) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&domain.Notification{}).
 		Where("user_id = ? AND is_read = ? AND is_archived = ?", userID, false, false).
@@ -106,12 +106,12 @@ func (r *notificationRepository) Update(ctx context.Context, notification *domai
 }
 
 // Delete deletes a notification
-func (r *notificationRepository) Delete(ctx context.Context, id uint64) error {
+func (r *notificationRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Delete(&domain.Notification{}, id).Error
 }
 
 // MarkAllAsRead marks all notifications as read for a user
-func (r *notificationRepository) MarkAllAsRead(ctx context.Context, userID uint64) error {
+func (r *notificationRepository) MarkAllAsRead(ctx context.Context, userID string) error {
 	now := time.Now()
 	return r.db.WithContext(ctx).Model(&domain.Notification{}).
 		Where("user_id = ? AND is_read = ?", userID, false).
@@ -122,7 +122,7 @@ func (r *notificationRepository) MarkAllAsRead(ctx context.Context, userID uint6
 }
 
 // DeleteAllRead deletes all read notifications for a user
-func (r *notificationRepository) DeleteAllRead(ctx context.Context, userID uint64) error {
+func (r *notificationRepository) DeleteAllRead(ctx context.Context, userID string) error {
 	return r.db.WithContext(ctx).
 		Where("user_id = ? AND is_read = ?", userID, true).
 		Delete(&domain.Notification{}).Error
@@ -137,7 +137,7 @@ func (r *notificationRepository) DeleteOldNotifications(ctx context.Context, day
 }
 
 // GetOrCreateSettings gets or creates notification settings for a user
-func (r *notificationRepository) GetOrCreateSettings(ctx context.Context, userID uint64) (*domain.NotificationSetting, error) {
+func (r *notificationRepository) GetOrCreateSettings(ctx context.Context, userID string) (*domain.NotificationSetting, error) {
 	var settings domain.NotificationSetting
 	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&settings).Error
 	if err != nil {

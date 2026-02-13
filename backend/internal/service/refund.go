@@ -207,7 +207,8 @@ func (s *refundService) ProcessRefund(ctx context.Context, id string) error {
 	}
 
 	// Process refund through payment provider
-	if err := s.paymentService.Refund(ctx, payment.ID, refund.RefundAmount, refund.RefundReason); err != nil {
+	// DD-006: Convert UUID to string
+	if err := s.paymentService.Refund(ctx, payment.ID.String(), refund.RefundAmount, refund.RefundReason); err != nil {
 		refund.MarkFailed()
 		s.repo.UpdateRefundRequest(ctx, refund)
 		return fmt.Errorf("failed to process refund payment: %w", err)
@@ -222,7 +223,8 @@ func (s *refundService) ProcessRefund(ctx context.Context, id string) error {
 	// Update order status to refunded
 	order, _ := s.orderService.GetByID(ctx, refund.OrderID)
 	if order != nil {
-		s.repo.UpdateStatus(ctx, order.ID, domain.OrderStatusRefunded)
+		// DD-006: Convert UUID to string
+		s.repo.UpdateStatus(ctx, order.ID.String(), domain.OrderStatusRefunded)
 	}
 
 	return nil

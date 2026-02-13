@@ -4,7 +4,11 @@ import (
 	"backend/internal/auth"
 	"backend/internal/config"
 	"backend/internal/middleware"
+	"backend/internal/repository"
 	"backend/internal/response"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,13 +36,24 @@ type UserInfo struct {
 
 // AuthHandler handles authentication
 type AuthHandler struct {
-	jwtConfig *config.JWTConfig
+	jwtConfig      *config.JWTConfig
+	userRepo       repository.UserRepository
+	rbac           *auth.RBAC
+	tokenBlacklist middleware.TokenBlacklist
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(jwtConfig *config.JWTConfig) *AuthHandler {
+func NewAuthHandler(
+	jwtConfig *config.JWTConfig,
+	userRepo repository.UserRepository,
+	rbac *auth.RBAC,
+	tokenBlacklist middleware.TokenBlacklist,
+) *AuthHandler {
 	return &AuthHandler{
-		jwtConfig: jwtConfig,
+		jwtConfig:      jwtConfig,
+		userRepo:       userRepo,
+		rbac:           rbac,
+		tokenBlacklist: tokenBlacklist,
 	}
 }
 
@@ -60,17 +75,35 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// TODO: Validate credentials against database
-	// For now, return mock response
+	// SEC-001: Look up user by username (phone/email/nickname)
+	user, err := h.userRepo.GetByUsername(c.Request.Context(), req.Username)
+	if err != nil {
+		response.Unauthorized(c, "Invalid username or password")
+		return
+	}
+
+	// Verify password using bcrypt
+	if err := auth.CheckPassword(req.Password, user.PasswordHash); err != nil {
+		response.Unauthorized(c, "Invalid username or password")
+		return
+	}
+
+	// Determine user role (default to customer if not set)
+	role := "customer"
+	if user.Nickname != "" {
+		// In a real system, roles would be stored in a separate table
+		// For now, use a simplified role lookup
+		role = "operations"
+	}
 
 	// Generate tokens
-	token, err := middleware.GenerateToken("user-id", req.Username, "operations", h.jwtConfig)
+	token, err := middleware.GenerateToken(user.ID.String(), user.Nickname, role, h.jwtConfig)
 	if err != nil {
 		response.InternalServerError(c, "Failed to generate token")
 		return
 	}
 
-	refreshToken, err := middleware.GenerateRefreshToken("user-id", h.jwtConfig)
+	refreshToken, err := middleware.GenerateRefreshToken(user.ID.String(), h.jwtConfig)
 	if err != nil {
 		response.InternalServerError(c, "Failed to generate refresh token")
 		return
@@ -80,10 +113,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		Token:        token,
 		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:       "user-id",
-			Username: req.Username,
-			Name:     "Admin User",
-			Role:     "operations",
+			ID:       user.ID.String(),
+			Username: user.Nickname,
+			Name:     user.Nickname,
+			Role:     role,
 		},
 	})
 }
@@ -105,22 +138,60 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	// TODO: Validate refresh token and get user info
+	// Extract Bearer token
+	parts := strings.SplitN(authHeader, " ", 2)
+	if !(len(parts) == 2 && parts[0] == "Bearer") {
+		response.Unauthorized(c, "Invalid authorization header format")
+		return
+	}
 
-	token, err := middleware.GenerateToken("user-id", "username", "operations", h.jwtConfig)
+	// SEC-001: Parse and validate the refresh token
+	claims, err := middleware.ParseToken(parts[1], h.jwtConfig)
+	if err != nil {
+		response.Unauthorized(c, "Invalid or expired refresh token")
+		return
+	}
+
+	// Verify it's a refresh token
+	if claims.TokenType != "refresh" {
+		response.Unauthorized(c, "Invalid token type, expected refresh token")
+		return
+	}
+
+	// Check if token is blacklisted
+	if h.tokenBlacklist != nil && h.tokenBlacklist.IsRevoked(c.Request.Context(), claims.ID) {
+		response.Unauthorized(c, "Token has been revoked")
+		return
+	}
+
+	// Look up user to verify they still exist and are active
+	user, err := h.userRepo.GetByID(c.Request.Context(), claims.UserID)
+	if err != nil {
+		response.Unauthorized(c, "User not found")
+		return
+	}
+
+	// Generate new token pair
+	token, err := middleware.GenerateToken(user.ID.String(), claims.Username, claims.Role, h.jwtConfig)
 	if err != nil {
 		response.InternalServerError(c, "Failed to generate token")
 		return
 	}
 
+	refreshToken, err := middleware.GenerateRefreshToken(user.ID.String(), h.jwtConfig)
+	if err != nil {
+		response.InternalServerError(c, "Failed to generate refresh token")
+		return
+	}
+
 	response.Success(c, LoginResponse{
 		Token:        token,
-		RefreshToken: "new-refresh-token",
+		RefreshToken: refreshToken,
 		User: UserInfo{
-			ID:       "user-id",
-			Username: "username",
-			Name:     "Admin User",
-			Role:     "operations",
+			ID:       user.ID.String(),
+			Username: user.Nickname,
+			Name:     user.Nickname,
+			Role:     claims.Role,
 		},
 	})
 }
@@ -135,7 +206,22 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // @Success 200 {object} response.Response
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// TODO: Add token to blacklist
+	// SEC-002: Add token to blacklist
+	authHeader := c.GetHeader("Authorization")
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			claims, err := middleware.ParseToken(parts[1], h.jwtConfig)
+			if err == nil && h.tokenBlacklist != nil {
+				// Add token to blacklist with remaining TTL
+				remaining := time.Until(claims.ExpiresAt.Time)
+				if remaining > 0 {
+					h.tokenBlacklist.Revoke(c.Request.Context(), claims.ID, remaining)
+				}
+			}
+		}
+	}
+
 	response.Success(c, gin.H{"message": "Logged out successfully"})
 }
 
@@ -156,7 +242,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	response.Success(c, UserInfo{
 		ID:       userID.(string),
 		Username: username.(string),
-		Name:     "Admin User",
+		Name:     username.(string),
 		Role:     role.(string),
 	})
 }
@@ -178,7 +264,33 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// TODO: Validate old password and update to new password
+	// SEC-001: Get current user
+	userID, _ := c.Get("userID")
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID.(string))
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "User not found")
+		return
+	}
+
+	// Verify old password
+	if err := auth.CheckPassword(req.OldPassword, user.PasswordHash); err != nil {
+		response.Unauthorized(c, "Old password is incorrect")
+		return
+	}
+
+	// Hash and save new password
+	hashedPassword, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		response.InternalServerError(c, "Failed to hash password")
+		return
+	}
+
+	user.PasswordHash = hashedPassword
+	if err := h.userRepo.Update(c.Request.Context(), user); err != nil {
+		response.InternalServerError(c, "Failed to update password")
+		return
+	}
+
 	response.Success(c, gin.H{"message": "Password changed successfully"})
 }
 
@@ -204,21 +316,12 @@ func (h *AuthHandler) WeChatLogin(c *gin.Context) {
 		return
 	}
 
-	// TODO: Exchange WeChat code for user info
-	// Generate tokens
-	token, _ := middleware.GenerateToken("wechat-user-id", "wechat-user", "customer", h.jwtConfig)
-	refreshToken, _ := middleware.GenerateRefreshToken("wechat-user-id", h.jwtConfig)
-
-	response.Success(c, LoginResponse{
-		Token:        token,
-		RefreshToken: refreshToken,
-		User: UserInfo{
-			ID:       "wechat-user-id",
-			Username: "wechat-user",
-			Name:     "WeChat User",
-			Role:     "customer",
-		},
-	})
+	// TODO: Exchange WeChat code for user info via WeChat SDK
+	// This requires WeChat Mini Program AppID and AppSecret
+	// 1. Call wx.login() API to get session_key and openid
+	// 2. Create or find user by openid
+	// 3. Generate JWT tokens
+	response.Error(c, http.StatusNotImplemented, "WeChat login requires WeChat SDK integration - configure AppID and AppSecret first")
 }
 
 // WeChatLoginRequest represents WeChat login request

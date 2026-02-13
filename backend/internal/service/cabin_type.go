@@ -117,7 +117,7 @@ func (s *cabinTypeService) Create(ctx context.Context, req CreateCabinTypeReques
 
 	cabinType := &domain.CabinType{
 		BaseModel: domain.BaseModel{
-			ID:        uuid.New().String(),
+			ID:        uuid.New(),
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
 		},

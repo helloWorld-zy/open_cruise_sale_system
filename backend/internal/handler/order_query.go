@@ -114,9 +114,7 @@ func (h *OrderQueryHandler) GetOrderStatistics(c *gin.Context) {
 	}
 
 	// Get all orders for user
-	filters := repository.OrderFilters{
-		UserID: userID.(string),
-	}
+	// Get all orders for user
 	paginator := &pagination.Paginator{Page: 1, PageSize: 1000}
 
 	orders, err := h.repo.ListByUser(c.Request.Context(), userID.(string), paginator)

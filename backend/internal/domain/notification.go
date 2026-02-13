@@ -10,7 +10,7 @@ import (
 // Notification represents a user notification
 type Notification struct {
 	BaseModel
-	UserID      uint64         `gorm:"not null;index" json:"user_id"`
+	UserID      string         `gorm:"not null;index" json:"user_id"`
 	Type        string         `gorm:"size:50;not null" json:"type"` // 'order', 'payment', 'inventory', 'system'
 	Title       string         `gorm:"size:200;not null" json:"title"`
 	Content     string         `gorm:"type:text;not null" json:"content"`
@@ -22,7 +22,7 @@ type Notification struct {
 	ReadAt      *time.Time     `json:"read_at,omitempty"`
 	ActionURL   string         `gorm:"size:500" json:"action_url,omitempty"`
 	ActionType  string         `gorm:"size:50" json:"action_type,omitempty"` // 'view_order', 'view_voyage', etc.
-	SourceID    *uint64        `json:"source_id,omitempty"`
+	SourceID    *string        `json:"source_id,omitempty"`
 	SourceType  string         `gorm:"size:50" json:"source_type,omitempty"`
 	RetryCount  int            `gorm:"not null;default:0" json:"retry_count"`
 	SentAt      *time.Time     `json:"sent_at,omitempty"`
@@ -103,15 +103,15 @@ func (n *Notification) IsDeliverable() bool {
 
 // NotificationData holds structured notification data
 type NotificationData struct {
-	OrderID      *uint64 `json:"order_id,omitempty"`
+	OrderID      *string `json:"order_id,omitempty"`
 	OrderNo      string  `json:"order_no,omitempty"`
-	VoyageID     *uint64 `json:"voyage_id,omitempty"`
+	VoyageID     *string `json:"voyage_id,omitempty"`
 	VoyageName   string  `json:"voyage_name,omitempty"`
-	CabinID      *uint64 `json:"cabin_id,omitempty"`
+	CabinID      *string `json:"cabin_id,omitempty"`
 	CabinNumber  string  `json:"cabin_number,omitempty"`
 	Amount       float64 `json:"amount,omitempty"`
 	Currency     string  `json:"currency,omitempty"`
-	RefundID     *uint64 `json:"refund_id,omitempty"`
+	RefundID     *string `json:"refund_id,omitempty"`
 	RefundAmount float64 `json:"refund_amount,omitempty"`
 	OldStatus    string  `json:"old_status,omitempty"`
 	NewStatus    string  `json:"new_status,omitempty"`
@@ -148,7 +148,7 @@ func (n *Notification) GetData() (*NotificationData, error) {
 // NotificationSetting represents user notification preferences
 type NotificationSetting struct {
 	BaseModel
-	UserID            uint64  `gorm:"uniqueIndex;not null" json:"user_id"`
+	UserID            string  `gorm:"uniqueIndex;not null" json:"user_id"`
 	OrderEnabled      bool    `gorm:"not null;default:true" json:"order_enabled"`
 	PaymentEnabled    bool    `gorm:"not null;default:true" json:"payment_enabled"`
 	InventoryEnabled  bool    `gorm:"not null;default:true" json:"inventory_enabled"`

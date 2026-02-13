@@ -10,11 +10,11 @@ import (
 // Travelogue represents a user-generated travel story/blog post
 type Travelogue struct {
 	BaseModel
-	UserID          uint64         `gorm:"not null;index" json:"user_id"`
+	UserID          string         `gorm:"not null;index" json:"user_id"`
 	User            User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	VoyageID        *uint64        `json:"voyage_id,omitempty"`
+	VoyageID        *string        `json:"voyage_id,omitempty"`
 	Voyage          *Voyage        `gorm:"foreignKey:VoyageID" json:"voyage,omitempty"`
-	CruiseID        *uint64        `json:"cruise_id,omitempty"`
+	CruiseID        *string        `json:"cruise_id,omitempty"`
 	Cruise          *Cruise        `gorm:"foreignKey:CruiseID" json:"cruise,omitempty"`
 	Title           string         `gorm:"not null;size:200" json:"title"`
 	Content         string         `gorm:"not null;type:text" json:"content"`
@@ -171,7 +171,7 @@ func (t *Travelogue) SetTags(tags []string) error {
 }
 
 // CanEdit checks if the travelogue can be edited
-func (t *Travelogue) CanEdit(userID uint64, isAdmin bool) bool {
+func (t *Travelogue) CanEdit(userID string, isAdmin bool) bool {
 	if isAdmin {
 		return true
 	}
@@ -181,11 +181,11 @@ func (t *Travelogue) CanEdit(userID uint64, isAdmin bool) bool {
 // TravelogueComment represents a comment on a travelogue
 type TravelogueComment struct {
 	BaseModel
-	TravelogueID uint64              `gorm:"not null;index" json:"travelogue_id"`
+	TravelogueID string              `gorm:"not null;index" json:"travelogue_id"`
 	Travelogue   Travelogue          `gorm:"foreignKey:TravelogueID" json:"travelogue,omitempty"`
-	UserID       uint64              `gorm:"not null;index" json:"user_id"`
+	UserID       string              `gorm:"not null;index" json:"user_id"`
 	User         User                `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ParentID     *uint64             `json:"parent_id,omitempty"`
+	ParentID     *string             `json:"parent_id,omitempty"`
 	Parent       *TravelogueComment  `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
 	Content      string              `gorm:"not null;type:text" json:"content"`
 	LikeCount    int                 `gorm:"not null;default:0" json:"like_count"`
@@ -206,8 +206,8 @@ func (c *TravelogueComment) IsReply() bool {
 // TravelogueLike represents a like on a travelogue
 type TravelogueLike struct {
 	BaseModel
-	TravelogueID uint64 `gorm:"not null;index" json:"travelogue_id"`
-	UserID       uint64 `gorm:"not null;index" json:"user_id"`
+	TravelogueID string `gorm:"not null;index" json:"travelogue_id"`
+	UserID       string `gorm:"not null;index" json:"user_id"`
 	User         User   `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
@@ -219,13 +219,13 @@ func (TravelogueLike) TableName() string {
 // Review represents a user review for a cruise or voyage
 type Review struct {
 	BaseModel
-	UserID       uint64         `gorm:"not null;index" json:"user_id"`
+	UserID       string         `gorm:"not null;index" json:"user_id"`
 	User         User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	VoyageID     *uint64        `json:"voyage_id,omitempty"`
+	VoyageID     *string        `json:"voyage_id,omitempty"`
 	Voyage       *Voyage        `gorm:"foreignKey:VoyageID" json:"voyage,omitempty"`
-	CruiseID     *uint64        `json:"cruise_id,omitempty"`
+	CruiseID     *string        `json:"cruise_id,omitempty"`
 	Cruise       *Cruise        `gorm:"foreignKey:CruiseID" json:"cruise,omitempty"`
-	OrderID      *uint64        `json:"order_id,omitempty"`
+	OrderID      *string        `json:"order_id,omitempty"`
 	Order        *Order         `gorm:"foreignKey:OrderID" json:"order,omitempty"`
 	Rating       int            `gorm:"not null" json:"rating"` // 1-5
 	Title        string         `gorm:"size:200" json:"title"`
@@ -239,6 +239,19 @@ type Review struct {
 	Status       string         `gorm:"not null;size:20;default:'pending'" json:"status"` // pending, approved, rejected
 	AdminReply   string         `gorm:"type:text" json:"admin_reply,omitempty"`
 	RepliedAt    *time.Time     `json:"replied_at,omitempty"`
+}
+
+// ReviewStats represents review statistics
+type ReviewStats struct {
+	TotalReviews       int         `json:"total_reviews"`
+	AverageRating      float64     `json:"average_rating"`
+	FiveStarCount      int         `json:"five_star_count"`
+	FourStarCount      int         `json:"four_star_count"`
+	ThreeStarCount     int         `json:"three_star_count"`
+	TwoStarCount       int         `json:"two_star_count"`
+	OneStarCount       int         `json:"one_star_count"`
+	RatingDistribution map[int]int `json:"rating_distribution"`
+	VerifiedCount      int         `json:"verified_count"`
 }
 
 // TableName returns the table name

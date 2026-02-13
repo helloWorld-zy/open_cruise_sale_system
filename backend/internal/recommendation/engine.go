@@ -324,7 +324,7 @@ func (e *recommendationEngine) GetLastMinuteDeals(ctx context.Context, limit int
 }
 
 // calculateScore calculates a recommendation score for a voyage based on user profile
-func (e *recommendationEngine) calculateScore(voyage *domain.Voyage, profile *analytics.UserProfile) float64 {
+func (e *recommendationEngine) calculateScore(voyage *domain.Voyage, profile *domain.UserProfile) float64 {
 	score := 0.3
 
 	if profile == nil {
@@ -332,7 +332,7 @@ func (e *recommendationEngine) calculateScore(voyage *domain.Voyage, profile *an
 	}
 
 	// Check cruise preference
-	for _, cruiseID := range profile.PreferredCruises {
+	for _, cruiseID := range profile.GetPreferredCruises() {
 		cid := strconv.FormatUint(cruiseID, 10)
 		if cid == voyage.CruiseID {
 			score += 0.25
@@ -341,7 +341,7 @@ func (e *recommendationEngine) calculateScore(voyage *domain.Voyage, profile *an
 	}
 
 	// Check route preference
-	for _, routeID := range profile.PreferredRoutes {
+	for _, routeID := range profile.GetPreferredRoutes() {
 		rid := strconv.FormatUint(routeID, 10)
 		if rid == voyage.RouteID {
 			score += 0.2
@@ -350,17 +350,19 @@ func (e *recommendationEngine) calculateScore(voyage *domain.Voyage, profile *an
 	}
 
 	// Check price match
-	if profile.PricePreference != nil {
-		if voyage.MinPrice >= profile.PricePreference.Min && voyage.MinPrice <= profile.PricePreference.Max {
+	pricePref := profile.GetPricePreference()
+	if pricePref != nil {
+		if voyage.MinPrice >= pricePref.Min && voyage.MinPrice <= pricePref.Max {
 			score += 0.2
 		}
 	}
 
 	// Check departure month
-	if len(profile.TravelPatterns.PreferredDepartureMonths) > 0 {
+	travelPatterns := profile.GetTravelPatterns()
+	if travelPatterns != nil && len(travelPatterns.PreferredDepartureMonths) > 0 {
 		if depDate, err := time.Parse("2006-01-02", voyage.DepartureDate); err == nil {
 			month := int(depDate.Month())
-			for _, m := range profile.TravelPatterns.PreferredDepartureMonths {
+			for _, m := range travelPatterns.PreferredDepartureMonths {
 				if m == month {
 					score += 0.1
 					break
@@ -377,7 +379,7 @@ func (e *recommendationEngine) calculateScore(voyage *domain.Voyage, profile *an
 }
 
 // buildRecommendation builds a Recommendation from a voyage
-func (e *recommendationEngine) buildRecommendation(ctx context.Context, voyage *domain.Voyage, score float64, profile *analytics.UserProfile) (*Recommendation, error) {
+func (e *recommendationEngine) buildRecommendation(ctx context.Context, voyage *domain.Voyage, score float64, profile *domain.UserProfile) (*Recommendation, error) {
 	// Use preloaded Cruise data
 	cruise := voyage.Cruise
 	if cruise.ID == uuid.Nil {

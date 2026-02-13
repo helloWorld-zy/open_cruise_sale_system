@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -105,7 +106,7 @@ func (c *CacheManager) GetOrSet(ctx context.Context, key string, dest interface{
 	// Store in cache
 	if err := c.Set(ctx, key, value); err != nil {
 		// Log error but don't fail the request
-		fmt.Printf("Failed to cache value: %v\n", err)
+		log.Printf("[WARN] Failed to cache value: %v", err)
 	}
 
 	// Set the result

@@ -1,6 +1,10 @@
 package domain
 
-import "gorm.io/datatypes"
+import (
+	"encoding/json"
+
+	"gorm.io/datatypes"
+)
 
 // Cruise represents a cruise ship
 type Cruise struct {
@@ -38,3 +42,22 @@ const (
 	CruiseStatusInactive    = "inactive"
 	CruiseStatusMaintenance = "maintenance"
 )
+
+// GetCoverImages returns cover images as string slice
+func (c *Cruise) GetCoverImages() []string {
+	var images []string
+	if len(c.CoverImages) > 0 {
+		_ = json.Unmarshal(c.CoverImages, &images)
+	}
+	return images
+}
+
+// SetCoverImages sets cover images from string slice
+func (c *Cruise) SetCoverImages(images []string) error {
+	data, err := json.Marshal(images)
+	if err != nil {
+		return err
+	}
+	c.CoverImages = datatypes.JSON(data)
+	return nil
+}

@@ -19,8 +19,8 @@ type InventoryAlertConfig struct {
 
 // InventoryAlert represents an inventory alert record
 type InventoryAlert struct {
-	VoyageID    uint64
-	CabinTypeID uint64
+	VoyageID    string
+	CabinTypeID string
 	Remaining   int
 	AlertedAt   time.Time
 }
@@ -28,7 +28,7 @@ type InventoryAlert struct {
 // InventoryAlertJob monitors cabin inventory and sends alerts when low
 type InventoryAlertJob struct {
 	inventoryRepo       repository.InventoryRepository
-	cabinRepo           repository.CabinRepository
+	cabinTypeRepo       repository.CabinTypeRepository
 	voyageRepo          repository.VoyageRepository
 	notificationService service.NotificationService
 	config              InventoryAlertConfig
@@ -40,14 +40,14 @@ type InventoryAlertJob struct {
 // NewInventoryAlertJob creates a new inventory alert job
 func NewInventoryAlertJob(
 	inventoryRepo repository.InventoryRepository,
-	cabinRepo repository.CabinRepository,
+	cabinTypeRepo repository.CabinTypeRepository,
 	voyageRepo repository.VoyageRepository,
 	notificationService service.NotificationService,
 	config InventoryAlertConfig,
 ) *InventoryAlertJob {
 	return &InventoryAlertJob{
 		inventoryRepo:       inventoryRepo,
-		cabinRepo:           cabinRepo,
+		cabinTypeRepo:       cabinTypeRepo,
 		voyageRepo:          voyageRepo,
 		notificationService: notificationService,
 		config:              config,
@@ -106,21 +106,23 @@ func (j *InventoryAlertJob) checkInventory() {
 	alertCount := 0
 	for _, voyage := range activeVoyages {
 		// Get cabin inventory for this voyage
-		inventories, err := j.inventoryRepo.GetByVoyageID(ctx, voyage.ID)
+		// DD-006: Use .String() for UUID and correct method name
+		inventories, err := j.inventoryRepo.ListInventoryByVoyage(ctx, voyage.ID.String())
 		if err != nil {
-			log.Printf("Failed to get inventory for voyage %d: %v", voyage.ID, err)
+			log.Printf("Failed to get inventory for voyage %s: %v", voyage.ID, err)
 			continue
 		}
 
 		// Check each cabin type's inventory
 		for _, inv := range inventories {
 			// Skip if inventory is not low
-			if inv.Remaining > j.config.LowInventoryThreshold {
+			if inv.AvailableCabins > j.config.LowInventoryThreshold {
 				continue
 			}
 
 			// Check if we should alert (cooldown period)
-			alertKey := fmt.Sprintf("%d:%d", voyage.ID, inv.CabinTypeID)
+			// DD-006: Use %s for string/UUID
+			alertKey := fmt.Sprintf("%s:%s", voyage.ID.String(), inv.CabinTypeID)
 			if !j.shouldAlert(alertKey) {
 				continue
 			}
@@ -147,7 +149,8 @@ func (j *InventoryAlertJob) checkInventory() {
 
 // getActiveVoyages gets voyages that are active and upcoming
 func (j *InventoryAlertJob) getActiveVoyages(ctx context.Context) ([]*domain.Voyage, error) {
-	now := time.Now()
+	// instantiating now to avoid unused variable error if logic is uncommented later
+	_ = time.Now()
 	// Get voyages that depart in the future and are not completed
 	// This is a simplified implementation - in production, you'd use repository methods
 	// For now, return empty list - the actual implementation should query the database
@@ -167,23 +170,24 @@ func (j *InventoryAlertJob) shouldAlert(alertKey string) bool {
 // sendInventoryAlert sends an inventory alert
 func (j *InventoryAlertJob) sendInventoryAlert(ctx context.Context, voyage *domain.Voyage, inv *domain.CabinInventory) error {
 	// Get cabin type details
-	cabinType, err := j.cabinRepo.GetCabinTypeByID(ctx, inv.CabinTypeID)
+	cabinType, err := j.cabinTypeRepo.GetByID(ctx, inv.CabinTypeID)
 	if err != nil {
 		return fmt.Errorf("failed to get cabin type: %w", err)
 	}
 
 	// Send alert via notification service
+	// DD-006: Use .String() for UUID
 	if err := j.notificationService.SendInventoryAlertNotification(
 		ctx,
-		voyage.ID,
+		voyage.ID.String(),
 		inv.CabinTypeID,
-		inv.Remaining,
+		inv.AvailableCabins,
 	); err != nil {
 		return fmt.Errorf("failed to send notification: %w", err)
 	}
 
-	log.Printf("Inventory alert sent: voyage=%d, cabin=%s, remaining=%d",
-		voyage.ID, cabinType.Name, inv.Remaining)
+	log.Printf("Inventory alert sent: voyage=%s, cabin=%s, remaining=%d",
+		voyage.ID, cabinType.Name, inv.AvailableCabins)
 
 	return nil
 }

@@ -2,9 +2,11 @@ package service
 
 import (
 	"backend/internal/domain"
+	"backend/internal/repository"
 	"context"
 	"errors"
 	"fmt"
+	"log"
 )
 
 var (
@@ -211,7 +213,7 @@ func (s *orderStateService) TransitionToPaid(ctx context.Context, order *domain.
 	}
 
 	order.Status = sm.CurrentState()
-	return s.orderRepo.UpdateStatus(ctx, order.ID, order.Status)
+	return s.orderRepo.UpdateStatus(ctx, order.ID.String(), order.Status)
 }
 
 func (s *orderStateService) TransitionToConfirmed(ctx context.Context, order *domain.Order) error {
@@ -227,7 +229,7 @@ func (s *orderStateService) TransitionToConfirmed(ctx context.Context, order *do
 	order.Status = sm.CurrentState()
 
 	// Confirm inventory bookings for each order item
-	items, err := s.orderRepo.ListOrderItemsByOrder(ctx, order.ID)
+	items, err := s.orderRepo.ListOrderItemsByOrder(ctx, order.ID.String())
 	if err != nil {
 		return err
 	}
@@ -238,7 +240,7 @@ func (s *orderStateService) TransitionToConfirmed(ctx context.Context, order *do
 		}
 	}
 
-	return s.orderRepo.UpdateStatus(ctx, order.ID, order.Status)
+	return s.orderRepo.UpdateStatus(ctx, order.ID.String(), order.Status)
 }
 
 func (s *orderStateService) TransitionToCompleted(ctx context.Context, order *domain.Order) error {
@@ -252,7 +254,7 @@ func (s *orderStateService) TransitionToCompleted(ctx context.Context, order *do
 	}
 
 	order.Status = sm.CurrentState()
-	return s.orderRepo.UpdateStatus(ctx, order.ID, order.Status)
+	return s.orderRepo.UpdateStatus(ctx, order.ID.String(), order.Status)
 }
 
 func (s *orderStateService) TransitionToCancelled(ctx context.Context, order *domain.Order) error {
@@ -261,7 +263,7 @@ func (s *orderStateService) TransitionToCancelled(ctx context.Context, order *do
 	}
 
 	// Release locked/confirmed inventory
-	items, err := s.orderRepo.ListOrderItemsByOrder(ctx, order.ID)
+	items, err := s.orderRepo.ListOrderItemsByOrder(ctx, order.ID.String())
 	if err != nil {
 		return err
 	}
@@ -271,11 +273,11 @@ func (s *orderStateService) TransitionToCancelled(ctx context.Context, order *do
 		if order.Status == domain.OrderStatusPaid || order.Status == domain.OrderStatusConfirmed {
 			if err := s.inventoryRepo.CancelBooking(ctx, item.VoyageID, item.CabinTypeID, 1); err != nil {
 				// Log error but continue with cancellation
-				fmt.Printf("Failed to cancel booking for cabin %s: %v\n", item.CabinTypeID, err)
+				log.Printf("[WARN] Failed to cancel booking for cabin %s: %v", item.CabinTypeID, err)
 			}
 		} else if order.Status == domain.OrderStatusPending {
 			if err := s.inventoryRepo.UnlockCabin(ctx, item.VoyageID, item.CabinTypeID, 1); err != nil {
-				fmt.Printf("Failed to unlock cabin %s: %v\n", item.CabinTypeID, err)
+				log.Printf("[WARN] Failed to unlock cabin %s: %v", item.CabinTypeID, err)
 			}
 		}
 	}
@@ -286,7 +288,7 @@ func (s *orderStateService) TransitionToCancelled(ctx context.Context, order *do
 	}
 
 	order.Status = sm.CurrentState()
-	return s.orderRepo.UpdateStatus(ctx, order.ID, order.Status)
+	return s.orderRepo.UpdateStatus(ctx, order.ID.String(), order.Status)
 }
 
 func (s *orderStateService) TransitionToRefunded(ctx context.Context, order *domain.Order) error {
@@ -300,12 +302,5 @@ func (s *orderStateService) TransitionToRefunded(ctx context.Context, order *dom
 	}
 
 	order.Status = sm.CurrentState()
-	return s.orderRepo.UpdateStatus(ctx, order.ID, order.Status)
-}
-
-// IsExpired checks if an order is expired (needs to be implemented on domain.Order)
-func (o *domain.Order) IsExpired() bool {
-	// This should be implemented on the domain.Order struct
-	// For now, return false as placeholder
-	return false
+	return s.orderRepo.UpdateStatus(ctx, order.ID.String(), order.Status)
 }

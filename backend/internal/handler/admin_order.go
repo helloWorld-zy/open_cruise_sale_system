@@ -112,7 +112,7 @@ func (h *AdminOrderHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	if err := validator.Validate(&req); err != nil {
+	if err := validator.ValidateStruct(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

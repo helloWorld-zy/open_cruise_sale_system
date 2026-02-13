@@ -5,13 +5,13 @@ import (
 	"backend/internal/repository"
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/md5"
+	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -125,7 +125,7 @@ func (w *wechatPay) CreatePayment(ctx context.Context, order *domain.Order, desc
 
 	// Create payment record in database
 	payment := &domain.Payment{
-		OrderID:       order.ID,
+		OrderID:       order.ID.String(),
 		PaymentNo:     paymentNo,
 		PaymentMethod: domain.PaymentMethodWechat,
 		Amount:        order.TotalAmount - order.DiscountAmount,
@@ -413,19 +413,34 @@ func (w *wechatPay) sign(message string) string {
 }
 
 func (w *wechatPay) decrypt(ciphertext, associatedData, nonce string) ([]byte, error) {
-	// Decode ciphertext
+	// Decode ciphertext from base64
 	cipherBytes, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode ciphertext: %w", err)
 	}
 
-	// Use AES-GCM decryption with APIv3 key
-	// This is a simplified implementation - real implementation should use proper AES-GCM
-	_ = associatedData
-	_ = nonce
-	_ = cipherBytes
+	// SEC-003: Implement AES-256-GCM decryption with APIv3 key
+	key := []byte(w.config.APIv3Key)
 
-	return nil, errors.New("decryption not implemented")
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	nonceBytes := []byte(nonce)
+	additionalData := []byte(associatedData)
+
+	plaintext, err := aesGCM.Open(nil, nonceBytes, cipherBytes, additionalData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt: %w", err)
+	}
+
+	return plaintext, nil
 }
 
 func (w *wechatPay) mapTradeState(state string) string {

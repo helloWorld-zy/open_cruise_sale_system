@@ -164,7 +164,7 @@ func (s *facilityService) Create(ctx context.Context, req CreateFacilityRequest)
 
 	facility := &domain.Facility{
 		BaseModel: domain.BaseModel{
-			ID:        uuid.New().String(),
+			ID:        uuid.New(),
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
 		},
@@ -340,7 +340,7 @@ func isValidFacilityStatus(status string) bool {
 func (s *facilityCategoryService) Create(ctx context.Context, req CreateFacilityCategoryRequest) (*domain.FacilityCategory, error) {
 	category := &domain.FacilityCategory{
 		BaseModel: domain.BaseModel{
-			ID:        uuid.New().String(),
+			ID:        uuid.New(),
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
 		},

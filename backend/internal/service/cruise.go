@@ -5,6 +5,7 @@ import (
 	"backend/internal/pagination"
 	"backend/internal/repository"
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -116,7 +117,7 @@ func (s *cruiseService) Create(ctx context.Context, req CreateCruiseRequest) (*d
 
 	cruise := &domain.Cruise{
 		BaseModel: domain.BaseModel{
-			ID:        uuid.New().String(),
+			ID:        uuid.New(),
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
 		},
@@ -234,7 +235,8 @@ func (s *cruiseService) Update(ctx context.Context, id string, req UpdateCruiseR
 		cruise.DeckCount = req.DeckCount
 	}
 	if len(req.CoverImages) > 0 {
-		cruise.CoverImages = datatypes.JSON(req.CoverImages)
+		imagesJSON, _ := json.Marshal(req.CoverImages)
+		cruise.CoverImages = datatypes.JSON(imagesJSON)
 	}
 	if req.Status != "" {
 		if !isValidCruiseStatus(req.Status) {

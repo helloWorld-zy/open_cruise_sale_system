@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/spf13/viper"
@@ -113,10 +114,6 @@ func Load() *Config {
 
 // GetDSN returns PostgreSQL connection string
 func (c *DatabaseConfig) GetDSN() string {
-	return "host=" + c.Host +
-		" port=" + string(rune(c.Port)) +
-		" user=" + c.User +
-		" password=" + c.Password +
-		" dbname=" + c.Name +
-		" sslmode=" + c.SSLMode
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		c.Host, c.Port, c.User, c.Password, c.Name, c.SSLMode)
 }

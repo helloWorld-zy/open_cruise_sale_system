@@ -17,7 +17,7 @@ open_cruise_sale_system/
 ├── .specify.specify/           # Project constitution & templates
 ├── specs/                      # Specifications & documentation
 │   └── 001-cruise-booking-system/
-│       ├── spec.md            # Feature specification (37KB)
+│       ├── spec.md            # Feature specification (50KB+, 含技术规范章节)
 │       ├── tasks.md           # Task breakdown (206 tasks)
 │       ├── plan/              # Implementation plans
 │       ├── contracts/         # API contracts (OpenAPI)
@@ -893,14 +893,31 @@ cd cmd/api && swag init
 ### Project Status: Production Ready ✓
 **All 11 Phases Complete** (206/206 tasks - 100%)
 
+### Latest Updates (2026-02-12)
+- ✅ **Technical Specifications** added to spec.md (300+ lines)
+  - 并发控制与库存保护规范（双层锁机制、CAS操作、分布式锁）
+  - 支付安全技术规范（幂等性、重复支付检测、敏感数据加密）
+  - 监控与告警规范（42个量化指标）
+  - 代码质量要求（审查清单、测试要求）
+- ✅ **Code Quality Checklists** completed (70 items)
+  - 需求完整性、清晰度、一致性全覆盖
+  - 并发控制与超卖防护详细规范
+  - 支付安全与幂等性实现要求
+- ✅ **Deployment Guide** published (production-ready)
+
 ---
 
 ## Contact & Resources
 
 - **Constitution**: `.specify.specify/memory/constitution.md`
-- **Specification**: `specs/001-cruise-booking-system/spec.md`
+- **Specification**: `specs/001-cruise-booking-system/spec.md` (含技术规范章节)
 - **Tasks**: `specs/001-cruise-booking-system/tasks.md`
 - **API Docs**: `specs/001-cruise-booking-system/contracts/openapi.yaml`
+- **Quality Checklists**: 
+  - `specs/001-cruise-booking-system/checklists/requirements.md` (需求质量检查)
+  - `specs/001-cruise-booking-system/checklists/code-quality.md` (代码质量检查 - 70项)
+  - `specs/001-cruise-booking-system/checklists/code-quality-report.md` (检查完成报告)
+- **Deployment Guide**: `DEPLOYMENT_GUIDE.md`
 
 ---
 

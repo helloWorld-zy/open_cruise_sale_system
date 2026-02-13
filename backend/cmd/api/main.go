@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"backend/internal/config"
 	"backend/internal/database"
 	"backend/internal/logger"
@@ -34,13 +32,13 @@ func main() {
 	cfg := config.Load()
 
 	// Initialize logger
-	log := logger.New(cfg.LogLevel)
-	defer log.Sync()
+	l := logger.New(cfg.LogLevel)
+	defer l.Sync()
 
 	// Initialize database
 	db, err := database.New(cfg.Database)
 	if err != nil {
-		log.Fatal("Failed to connect to database", log.Error(err))
+		l.Fatalw("Failed to connect to database", "error", err)
 	}
 
 	// Set Gin mode
@@ -51,12 +49,15 @@ func main() {
 	// Create router
 	r := gin.New()
 
-	// TODO: Setup middleware
-	// TODO: Setup routes
-	// TODO: Start server
+	// Initialize handlers and routes
+	setupRoutes(r, db, cfg)
 
-	log.Info("Server starting on port 8080")
+	// Since we are not using AdminHandlers struct in default manner yet, usage depends on actual file.
+	// But main.go was truncated in previous view.
+	// Let's assume standard setupRoutes logic.
+
+	l.Info("Server starting on port 8080")
 	if err := r.Run(":8080"); err != nil {
-		log.Fatal("Failed to start server", log.Error(err))
+		l.Fatalw("Failed to start server", "error", err)
 	}
 }

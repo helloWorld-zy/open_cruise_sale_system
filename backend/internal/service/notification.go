@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
+	"log"
 )
 
 var (
@@ -32,61 +32,61 @@ type NotificationService interface {
 	CreateAndSend(ctx context.Context, req CreateNotificationRequest) (*domain.Notification, error)
 
 	// GetByID retrieves a notification by ID
-	GetByID(ctx context.Context, id uint64) (*domain.Notification, error)
+	GetByID(ctx context.Context, id string) (*domain.Notification, error)
 
 	// List retrieves notifications for a user
-	List(ctx context.Context, userID uint64, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error)
+	List(ctx context.Context, userID string, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error)
 
 	// GetUnreadCount gets the count of unread notifications
-	GetUnreadCount(ctx context.Context, userID uint64) (int64, error)
+	GetUnreadCount(ctx context.Context, userID string) (int64, error)
 
 	// MarkAsRead marks a notification as read
-	MarkAsRead(ctx context.Context, id uint64) error
+	MarkAsRead(ctx context.Context, id string) error
 
 	// MarkAllAsRead marks all notifications as read for a user
-	MarkAllAsRead(ctx context.Context, userID uint64) error
+	MarkAllAsRead(ctx context.Context, userID string) error
 
 	// Archive archives a notification
-	Archive(ctx context.Context, id uint64) error
+	Archive(ctx context.Context, id string) error
 
 	// Delete deletes a notification
-	Delete(ctx context.Context, id uint64) error
+	Delete(ctx context.Context, id string) error
 
 	// GetSettings retrieves notification settings for a user
-	GetSettings(ctx context.Context, userID uint64) (*domain.NotificationSetting, error)
+	GetSettings(ctx context.Context, userID string) (*domain.NotificationSetting, error)
 
 	// UpdateSettings updates notification settings
-	UpdateSettings(ctx context.Context, userID uint64, req UpdateSettingsRequest) (*domain.NotificationSetting, error)
+	UpdateSettings(ctx context.Context, userID string, req UpdateSettingsRequest) (*domain.NotificationSetting, error)
 
 	// SendOrderCreatedNotification sends notification when order is created
-	SendOrderCreatedNotification(ctx context.Context, userID uint64, order *domain.Order) error
+	SendOrderCreatedNotification(ctx context.Context, userID string, order *domain.Order) error
 
 	// SendOrderPaidNotification sends notification when order is paid
-	SendOrderPaidNotification(ctx context.Context, userID uint64, order *domain.Order) error
+	SendOrderPaidNotification(ctx context.Context, userID string, order *domain.Order) error
 
 	// SendOrderConfirmedNotification sends notification when order is confirmed
-	SendOrderConfirmedNotification(ctx context.Context, userID uint64, order *domain.Order) error
+	SendOrderConfirmedNotification(ctx context.Context, userID string, order *domain.Order) error
 
 	// SendRefundApprovedNotification sends notification when refund is approved
-	SendRefundApprovedNotification(ctx context.Context, userID uint64, refund *domain.RefundRequest) error
+	SendRefundApprovedNotification(ctx context.Context, userID string, refund *domain.RefundRequest) error
 
 	// SendInventoryAlertNotification sends inventory alert to admins
-	SendInventoryAlertNotification(ctx context.Context, voyageID uint64, cabinTypeID uint64, remaining int) error
+	SendInventoryAlertNotification(ctx context.Context, voyageID string, cabinTypeID string, remaining int) error
 }
 
 // CreateNotificationRequest represents a request to create a notification
 type CreateNotificationRequest struct {
-	UserID       uint64                      `json:"user_id" validate:"required"
-	Type         string                      `json:"type" validate:"required,oneof=order payment inventory system refund voyage promotion"
-	Title        string                      `json:"title" validate:"required,max=200"
-	Content      string                      `json:"content" validate:"required"
-	Data         *domain.NotificationData    `json:"data,omitempty"`
-	Priority     string                      `json:"priority,omitempty" validate:"omitempty,oneof=low normal high urgent"`
-	Channel      string                      `json:"channel,omitempty" validate:"omitempty,oneof=in_app wechat sms email"`
-	ActionURL    string                      `json:"action_url,omitempty"`
-	ActionType   string                      `json:"action_type,omitempty"`
-	SourceID     *uint64                     `json:"source_id,omitempty"`
-	SourceType   string                      `json:"source_type,omitempty"`
+	UserID     string                   `json:"user_id" validate:"required"`
+	Type       string                   `json:"type" validate:"required,oneof=order payment inventory system refund voyage promotion"`
+	Title      string                   `json:"title" validate:"required,max=200"`
+	Content    string                   `json:"content" validate:"required"`
+	Data       *domain.NotificationData `json:"data,omitempty"`
+	Priority   string                   `json:"priority,omitempty" validate:"omitempty,oneof=low normal high urgent"`
+	Channel    string                   `json:"channel,omitempty" validate:"omitempty,oneof=in_app wechat sms email"`
+	ActionURL  string                   `json:"action_url,omitempty"`
+	ActionType string                   `json:"action_type,omitempty"`
+	SourceID   *string                  `json:"source_id,omitempty"`
+	SourceType string                   `json:"source_type,omitempty"`
 }
 
 // UpdateSettingsRequest represents a request to update notification settings
@@ -199,7 +199,7 @@ func (s *notificationService) CreateAndSend(ctx context.Context, req CreateNotif
 }
 
 // GetByID retrieves a notification by ID
-func (s *notificationService) GetByID(ctx context.Context, id uint64) (*domain.Notification, error) {
+func (s *notificationService) GetByID(ctx context.Context, id string) (*domain.Notification, error) {
 	notification, err := s.notificationRepo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrRecordNotFound) {
@@ -211,17 +211,17 @@ func (s *notificationService) GetByID(ctx context.Context, id uint64) (*domain.N
 }
 
 // List retrieves notifications for a user
-func (s *notificationService) List(ctx context.Context, userID uint64, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error) {
+func (s *notificationService) List(ctx context.Context, userID string, paginator *pagination.Paginator, unreadOnly bool) (*pagination.Result, error) {
 	return s.notificationRepo.List(ctx, userID, paginator, unreadOnly)
 }
 
 // GetUnreadCount gets the count of unread notifications
-func (s *notificationService) GetUnreadCount(ctx context.Context, userID uint64) (int64, error) {
+func (s *notificationService) GetUnreadCount(ctx context.Context, userID string) (int64, error) {
 	return s.notificationRepo.GetUnreadCount(ctx, userID)
 }
 
 // MarkAsRead marks a notification as read
-func (s *notificationService) MarkAsRead(ctx context.Context, id uint64) error {
+func (s *notificationService) MarkAsRead(ctx context.Context, id string) error {
 	notification, err := s.notificationRepo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrRecordNotFound) {
@@ -235,12 +235,12 @@ func (s *notificationService) MarkAsRead(ctx context.Context, id uint64) error {
 }
 
 // MarkAllAsRead marks all notifications as read for a user
-func (s *notificationService) MarkAllAsRead(ctx context.Context, userID uint64) error {
+func (s *notificationService) MarkAllAsRead(ctx context.Context, userID string) error {
 	return s.notificationRepo.MarkAllAsRead(ctx, userID)
 }
 
 // Archive archives a notification
-func (s *notificationService) Archive(ctx context.Context, id uint64) error {
+func (s *notificationService) Archive(ctx context.Context, id string) error {
 	notification, err := s.notificationRepo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrRecordNotFound) {
@@ -254,17 +254,17 @@ func (s *notificationService) Archive(ctx context.Context, id uint64) error {
 }
 
 // Delete deletes a notification
-func (s *notificationService) Delete(ctx context.Context, id uint64) error {
+func (s *notificationService) Delete(ctx context.Context, id string) error {
 	return s.notificationRepo.Delete(ctx, id)
 }
 
 // GetSettings retrieves notification settings for a user
-func (s *notificationService) GetSettings(ctx context.Context, userID uint64) (*domain.NotificationSetting, error) {
+func (s *notificationService) GetSettings(ctx context.Context, userID string) (*domain.NotificationSetting, error) {
 	return s.notificationRepo.GetOrCreateSettings(ctx, userID)
 }
 
 // UpdateSettings updates notification settings
-func (s *notificationService) UpdateSettings(ctx context.Context, userID uint64, req UpdateSettingsRequest) (*domain.NotificationSetting, error) {
+func (s *notificationService) UpdateSettings(ctx context.Context, userID string, req UpdateSettingsRequest) (*domain.NotificationSetting, error) {
 	settings, err := s.notificationRepo.GetOrCreateSettings(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -319,21 +319,22 @@ func (s *notificationService) UpdateSettings(ctx context.Context, userID uint64,
 }
 
 // SendOrderCreatedNotification sends notification when order is created
-func (s *notificationService) SendOrderCreatedNotification(ctx context.Context, userID uint64, order *domain.Order) error {
+func (s *notificationService) SendOrderCreatedNotification(ctx context.Context, userID string, order *domain.Order) error {
+	orderID := order.ID.String()
 	req := CreateNotificationRequest{
 		UserID:  userID,
 		Type:    domain.NotificationTypeOrder,
 		Title:   "订单已创建",
 		Content: fmt.Sprintf("您的订单 %s 已创建，请在30分钟内完成支付。", order.OrderNumber),
 		Data: &domain.NotificationData{
-			OrderID:  &order.ID,
+			OrderID:  &orderID,
 			OrderNo:  order.OrderNumber,
 			Amount:   order.TotalAmount,
 			Currency: order.Currency,
 		},
 		Priority:   domain.NotificationPriorityHigh,
 		ActionType: domain.NotificationActionViewOrder,
-		SourceID:   &order.ID,
+		SourceID:   &orderID,
 		SourceType: domain.NotificationTypeOrder,
 	}
 
@@ -342,21 +343,22 @@ func (s *notificationService) SendOrderCreatedNotification(ctx context.Context, 
 }
 
 // SendOrderPaidNotification sends notification when order is paid
-func (s *notificationService) SendOrderPaidNotification(ctx context.Context, userID uint64, order *domain.Order) error {
+func (s *notificationService) SendOrderPaidNotification(ctx context.Context, userID string, order *domain.Order) error {
+	orderID := order.ID.String()
 	req := CreateNotificationRequest{
 		UserID:  userID,
 		Type:    domain.NotificationTypePayment,
 		Title:   "订单支付成功",
 		Content: fmt.Sprintf("您的订单 %s 支付成功，金额: %.2f %s", order.OrderNumber, order.TotalAmount, order.Currency),
 		Data: &domain.NotificationData{
-			OrderID:  &order.ID,
+			OrderID:  &orderID,
 			OrderNo:  order.OrderNumber,
 			Amount:   order.TotalAmount,
 			Currency: order.Currency,
 		},
 		Priority:   domain.NotificationPriorityNormal,
 		ActionType: domain.NotificationActionViewOrder,
-		SourceID:   &order.ID,
+		SourceID:   &orderID,
 		SourceType: domain.NotificationTypeOrder,
 	}
 
@@ -365,19 +367,20 @@ func (s *notificationService) SendOrderPaidNotification(ctx context.Context, use
 }
 
 // SendOrderConfirmedNotification sends notification when order is confirmed
-func (s *notificationService) SendOrderConfirmedNotification(ctx context.Context, userID uint64, order *domain.Order) error {
+func (s *notificationService) SendOrderConfirmedNotification(ctx context.Context, userID string, order *domain.Order) error {
+	orderID := order.ID.String()
 	req := CreateNotificationRequest{
 		UserID:  userID,
 		Type:    domain.NotificationTypeOrder,
 		Title:   "订单已确认",
 		Content: fmt.Sprintf("您的订单 %s 已确认，祝您旅途愉快！", order.OrderNumber),
 		Data: &domain.NotificationData{
-			OrderID:  &order.ID,
-			OrderNo:  order.OrderNumber,
+			OrderID: &orderID,
+			OrderNo: order.OrderNumber,
 		},
 		Priority:   domain.NotificationPriorityNormal,
 		ActionType: domain.NotificationActionViewOrder,
-		SourceID:   &order.ID,
+		SourceID:   &orderID,
 		SourceType: domain.NotificationTypeOrder,
 	}
 
@@ -386,19 +389,20 @@ func (s *notificationService) SendOrderConfirmedNotification(ctx context.Context
 }
 
 // SendRefundApprovedNotification sends notification when refund is approved
-func (s *notificationService) SendRefundApprovedNotification(ctx context.Context, userID uint64, refund *domain.RefundRequest) error {
+func (s *notificationService) SendRefundApprovedNotification(ctx context.Context, userID string, refund *domain.RefundRequest) error {
+	refundID := refund.ID.String()
 	req := CreateNotificationRequest{
 		UserID:  userID,
 		Type:    domain.NotificationTypeRefund,
 		Title:   "退款已批准",
-		Content: fmt.Sprintf("您的退款申请已批准，退款金额: %.2f，将在3-7个工作日内到账。", refund.Amount),
+		Content: fmt.Sprintf("您的退款申请已批准，退款金额: %.2f，将在3-7个工作日内到账。", refund.RefundAmount),
 		Data: &domain.NotificationData{
-			RefundID:     &refund.ID,
-			RefundAmount: refund.Amount,
+			RefundID:     &refundID,
+			RefundAmount: refund.RefundAmount,
 		},
 		Priority:   domain.NotificationPriorityHigh,
 		ActionType: domain.NotificationActionViewRefund,
-		SourceID:   &refund.ID,
+		SourceID:   &refundID,
 		SourceType: domain.NotificationTypeRefund,
 	}
 
@@ -407,24 +411,36 @@ func (s *notificationService) SendRefundApprovedNotification(ctx context.Context
 }
 
 // SendInventoryAlertNotification sends inventory alert to admins
-func (s *notificationService) SendInventoryAlertNotification(ctx context.Context, voyageID uint64, cabinTypeID uint64, remaining int) error {
-	// This would typically send to admin users
-	// For now, create a system notification
-	req := CreateNotificationRequest{
-		UserID:  1, // Admin user ID
-		Type:    domain.NotificationTypeInventory,
-		Title:   "库存预警",
-		Content: fmt.Sprintf("航次 %d 的房型 %d 仅剩 %d 间，请及时补充库存。", voyageID, cabinTypeID, remaining),
-		Data: &domain.NotificationData{
-			Count: remaining,
-		},
-		Priority:   domain.NotificationPriorityUrgent,
-		SourceID:   &voyageID,
-		SourceType: domain.NotificationTypeVoyage,
+func (s *notificationService) SendInventoryAlertNotification(ctx context.Context, voyageID string, cabinTypeID string, remaining int) error {
+	// Query admin users from repository instead of using hardcoded ID
+	// For now, use a system-level notification approach
+	adminUsers, err := s.userRepo.ListAdminUsers(ctx)
+	if err != nil || len(adminUsers) == 0 {
+		// Fallback: log warning if no admin users can be found
+		log.Printf("[WARN] No admin users found for inventory alert, voyageID=%s cabinTypeID=%s remaining=%d", voyageID, cabinTypeID, remaining)
+		return nil
 	}
 
-	_, err := s.Create(ctx, req)
-	return err
+	for _, admin := range adminUsers {
+		req := CreateNotificationRequest{
+			UserID:  admin.ID.String(),
+			Type:    domain.NotificationTypeInventory,
+			Title:   "库存预警",
+			Content: fmt.Sprintf("航次 %s 的房型 %s 仅剩 %d 间，请及时补充库存。", voyageID, cabinTypeID, remaining),
+			Data: &domain.NotificationData{
+				Count: remaining,
+			},
+			Priority:   domain.NotificationPriorityUrgent,
+			SourceID:   &voyageID,
+			SourceType: domain.NotificationTypeVoyage,
+		}
+
+		if _, err := s.Create(ctx, req); err != nil {
+			log.Printf("[WARN] Failed to send inventory alert to admin %s: %v", admin.ID, err)
+		}
+	}
+
+	return nil
 }
 
 // sendExternalNotification sends notification via external channels

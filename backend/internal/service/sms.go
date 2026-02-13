@@ -1,12 +1,13 @@
 package service
 
 import (
+	"backend/internal/domain"
 	"backend/internal/repository"
 	"context"
 	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -167,7 +168,7 @@ func (s *SMSService) generateCode(length int) string {
 // sendSMS sends SMS using configured provider
 func (s *SMSService) sendSMS(phone, code string) error {
 	// Mock implementation - log to console
-	fmt.Printf("[SMS] Sending code %s to %s\n", code, phone)
+	log.Printf("[SMS] Sending code %s to %s", code, phone)
 
 	// In production, implement actual SMS sending:
 	// - Aliyun SMS

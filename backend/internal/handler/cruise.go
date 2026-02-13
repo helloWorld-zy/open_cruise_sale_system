@@ -38,7 +38,7 @@ func (h *CruiseHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := validator.Validate(&req); err != nil {
+	if err := validator.ValidateStruct(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -163,7 +163,7 @@ func (h *CruiseHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := validator.Validate(&req); err != nil {
+	if err := validator.ValidateStruct(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

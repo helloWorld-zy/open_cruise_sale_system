@@ -1,21 +1,21 @@
 package handler
 
 import (
-	"backend/internal/database"
 	"context"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // HealthHandler handles health check endpoints
 type HealthHandler struct {
-	db *database.DB
+	db *gorm.DB
 }
 
 // NewHealthHandler creates a new health handler
-func NewHealthHandler(db *database.DB) *HealthHandler {
+func NewHealthHandler(db *gorm.DB) *HealthHandler {
 	return &HealthHandler{db: db}
 }
 
@@ -86,7 +86,7 @@ func (h *HealthHandler) checkDatabase() bool {
 		return false
 	}
 
-	sqlDB, err := h.db.DB.DB()
+	sqlDB, err := h.db.DB()
 	if err != nil {
 		return false
 	}

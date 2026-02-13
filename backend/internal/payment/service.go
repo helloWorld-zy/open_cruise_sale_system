@@ -104,6 +104,13 @@ func (s *paymentService) ProcessCallback(ctx context.Context, provider string, b
 		return fmt.Errorf("payment not found: %w", err)
 	}
 
+	// SEC-004: Idempotency check - skip if payment is already in terminal state
+	if payment.Status == domain.PaymentStatusSuccess ||
+		payment.Status == domain.PaymentStatusRefunded {
+		// Payment already processed, skip duplicate callback
+		return nil
+	}
+
 	// Update payment status
 	payment.Status = result.Status
 	payment.ThirdPartyTransactionID = result.ThirdPartyID
@@ -243,5 +250,8 @@ func (s *paymentService) publishPaymentEvent(eventType string, payment *domain.P
 	}
 
 	data, _ := json.Marshal(event)
-	s.natsConn.Publish(eventType, data)
+	if err := s.natsConn.Publish(eventType, data); err != nil {
+		// Log but don't fail - the payment is already processed
+		fmt.Printf("[WARN] Failed to publish payment event %s: %v\n", eventType, err)
+	}
 }

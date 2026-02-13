@@ -3,6 +3,7 @@ package middleware
 import (
 	"backend/internal/config"
 	"backend/internal/response"
+	"fmt"
 	"strings"
 	"time"
 
@@ -41,6 +42,10 @@ func JWTAuth(cfg *config.JWTConfig) gin.HandlerFunc {
 		claims := &Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			// SEC-007: Validate signing algorithm to prevent algorithm confusion attacks
+			if token.Method.Alg() != "HS256" {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
 			return []byte(cfg.Secret), nil
 		})
 
@@ -123,4 +128,22 @@ func GenerateRefreshToken(userID string, cfg *config.JWTConfig) (string, error) 
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(cfg.Secret))
+}
+
+// ParseToken parses and validates a JWT token string
+func ParseToken(tokenString string, cfg *config.JWTConfig) (*Claims, error) {
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if token.Method.Alg() != "HS256" {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(cfg.Secret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+	return claims, nil
 }

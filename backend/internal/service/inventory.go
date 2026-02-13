@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 var (
@@ -170,7 +172,7 @@ func (s *inventoryService) CancelBooking(ctx context.Context, voyageID, cabinTyp
 func (s *inventoryService) GetInventory(ctx context.Context, voyageID, cabinTypeID string) (*domain.CabinInventory, error) {
 	inventory, err := s.inventoryRepo.GetInventory(ctx, voyageID, cabinTypeID)
 	if err != nil {
-		if errors.Is(err, errors.New("record not found")) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrInventoryNotFound
 		}
 		return nil, err

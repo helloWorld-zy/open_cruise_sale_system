@@ -100,17 +100,13 @@ func (h *PaymentHandler) WechatCallback(c *gin.Context) {
 func (h *PaymentHandler) Query(c *gin.Context) {
 	id := c.Param("id")
 
-	payment, err := h.service.QueryPayment(c.Request.Context(), id)
+	result, err := h.service.QueryPayment(c.Request.Context(), id)
 	if err != nil {
-		if err == payment.ErrPaymentNotFound {
-			response.NotFound(c, "payment not found")
-			return
-		}
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response.Success(c, payment)
+	response.Success(c, result)
 }
 
 // GetByOrder godoc

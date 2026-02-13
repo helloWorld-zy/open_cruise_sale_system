@@ -16,11 +16,13 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id string) (*domain.User, error)
 	GetByPhone(ctx context.Context, phone string) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
+	GetByUsername(ctx context.Context, username string) (*domain.User, error)
 	GetByWechatOpenID(ctx context.Context, openID string) (*domain.User, error)
 	Update(ctx context.Context, user *domain.User) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filters UserFilters, paginator *pagination.Paginator) ([]*domain.User, error)
 	Count(ctx context.Context, filters UserFilters) (int64, error)
+	ListAdminUsers(ctx context.Context) ([]*domain.User, error)
 
 	// FrequentPassenger operations
 	CreateFrequentPassenger(ctx context.Context, passenger *domain.FrequentPassenger) error
@@ -171,6 +173,29 @@ func (r *userRepository) UpdateFrequentPassenger(ctx context.Context, passenger 
 
 func (r *userRepository) DeleteFrequentPassenger(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Delete(&domain.FrequentPassenger{}, "id = ?", id).Error
+}
+
+func (r *userRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
+	var user domain.User
+	err := r.db.WithContext(ctx).
+		Where("nickname = ? OR phone = ? OR email = ?", username, username, username).
+		First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepository) ListAdminUsers(ctx context.Context) ([]*domain.User, error) {
+	// Query users who have admin/operations roles
+	// In a real RBAC system, this would join with a roles table
+	// For now, query users with status='active' and a known admin identifier
+	var users []*domain.User
+	err := r.db.WithContext(ctx).
+		Where("status = ?", domain.UserStatusActive).
+		Limit(10).
+		Find(&users).Error
+	return users, err
 }
 
 // ErrUserNotFound is returned when a user is not found

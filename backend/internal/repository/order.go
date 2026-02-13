@@ -5,12 +5,13 @@ import (
 	"backend/internal/pagination"
 	"context"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
 
-// OrderRepository defines the interface for order data operations
-type OrderRepository interface {
+// OrderCoreRepository defines core order CRUD operations
+type OrderCoreRepository interface {
 	Create(ctx context.Context, order *domain.Order) error
 	GetByID(ctx context.Context, id string) (*domain.Order, error)
 	GetByOrderNumber(ctx context.Context, orderNumber string) (*domain.Order, error)
@@ -23,16 +24,21 @@ type OrderRepository interface {
 	UpdateStatus(ctx context.Context, id string, status string) error
 	UpdatePaymentStatus(ctx context.Context, id string, paymentStatus string, paidAmount float64) error
 	Delete(ctx context.Context, id string) error
+	GetOrderWithDetails(ctx context.Context, id string) (*domain.Order, error)
+}
 
-	// OrderItem operations
+// OrderItemRepository defines order item operations
+type OrderItemRepository interface {
 	CreateOrderItem(ctx context.Context, item *domain.OrderItem) error
 	GetOrderItemByID(ctx context.Context, id string) (*domain.OrderItem, error)
 	ListOrderItemsByOrder(ctx context.Context, orderID string) ([]*domain.OrderItem, error)
 	UpdateOrderItem(ctx context.Context, item *domain.OrderItem) error
 	UpdateOrderItemStatus(ctx context.Context, id string, status string) error
 	DeleteOrderItem(ctx context.Context, id string) error
+}
 
-	// Passenger operations
+// PassengerRepository defines passenger operations
+type PassengerRepository interface {
 	CreatePassenger(ctx context.Context, passenger *domain.Passenger) error
 	GetPassengerByID(ctx context.Context, id string) (*domain.Passenger, error)
 	ListPassengersByOrder(ctx context.Context, orderID string) ([]*domain.Passenger, error)
@@ -40,21 +46,35 @@ type OrderRepository interface {
 	UpdatePassenger(ctx context.Context, passenger *domain.Passenger) error
 	DeletePassenger(ctx context.Context, id string) error
 	BatchCreatePassengers(ctx context.Context, passengers []*domain.Passenger) error
+}
 
-	// Complex queries
-	GetOrderWithDetails(ctx context.Context, id string) (*domain.Order, error)
-
-	// Payment operations
+// PaymentRepository defines payment operations
+type PaymentRepository interface {
 	CreatePayment(ctx context.Context, payment *domain.Payment) error
 	GetPaymentByID(ctx context.Context, id string) (*domain.Payment, error)
 	GetPaymentByNo(ctx context.Context, paymentNo string) (*domain.Payment, error)
 	UpdatePayment(ctx context.Context, payment *domain.Payment) error
+}
 
-	// Refund operations
+// RefundRepository defines refund operations
+type RefundRepository interface {
 	CreateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error
 	GetRefundRequestByID(ctx context.Context, id string) (*domain.RefundRequest, error)
 	ListRefundRequests(ctx context.Context, filters RefundFilters, paginator *pagination.Paginator) ([]*domain.RefundRequest, error)
 	UpdateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error
+}
+
+// OrderRepository combines all order-related repository interfaces
+// DD-002: Split into focused sub-interfaces for better SRP compliance
+type OrderRepository interface {
+	OrderCoreRepository
+	OrderItemRepository
+	PassengerRepository
+	PaymentRepository
+	RefundRepository
+
+	// DD-004: Transaction support for atomic operations
+	WithTransaction(ctx context.Context, fn func(repo OrderRepository) error) error
 }
 
 // RefundFilters represents filters for refund queries
@@ -86,6 +106,15 @@ type orderRepository struct {
 // NewOrderRepository creates a new order repository
 func NewOrderRepository(db *gorm.DB) OrderRepository {
 	return &orderRepository{db: db}
+}
+
+// WithTransaction executes fn within a database transaction
+// DD-004: Ensures atomic operations for multi-step processes like order creation
+func (r *orderRepository) WithTransaction(ctx context.Context, fn func(repo OrderRepository) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txRepo := &orderRepository{db: tx}
+		return fn(txRepo)
+	})
 }
 
 // ==================== Order Operations ====================
@@ -434,7 +463,7 @@ func (r *orderRepository) UpdateRefundRequest(ctx context.Context, refund *domai
 
 // Helper function
 func getCurrentTimestamp() string {
-	return "" // This should be implemented properly in real code
+	return time.Now().UTC().Format(time.RFC3339)
 }
 
 // ErrOrderNotFound is returned when an order is not found

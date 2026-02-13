@@ -1,14 +1,10 @@
 package handler
 
 import (
-	"backend/internal/domain"
 	"backend/internal/pagination"
 	"backend/internal/response"
 	"backend/internal/service"
-	"io"
 	"net/http"
-	"path/filepath"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -197,7 +193,7 @@ func (h *AdminCruiseHandler) Update(c *gin.Context) {
 	// Start with existing images
 	var currentImages []string
 	if existing.CoverImages != nil {
-		currentImages = existing.CoverImages
+		currentImages = existing.GetCoverImages()
 	}
 
 	// Handle image removals

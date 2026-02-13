@@ -8,21 +8,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Role constantsconst (
-	RoleSuperAdmin       = "super_admin"
-	RoleOperations       = "operations"
-	RoleFinance          = "finance"
-	RoleCustomerService  = "customer_service"
+// Role constants
+const (
+	RoleSuperAdmin      = "super_admin"
+	RoleOperations      = "operations"
+	RoleFinance         = "finance"
+	RoleCustomerService = "customer_service"
 )
 
-// AllRoles returns all available rolesvar AllRoles = []string{
+// AllRoles returns all available roles
+var AllRoles = []string{
 	RoleSuperAdmin,
 	RoleOperations,
 	RoleFinance,
 	RoleCustomerService,
 }
 
-// IsValidRole checks if a role is validfunc IsValidRole(role string) bool {
+// IsValidRole checks if a role is valid
+func IsValidRole(role string) bool {
 	for _, r := range AllRoles {
 		if r == role {
 			return true
@@ -31,7 +34,8 @@ import (
 	return false
 }
 
-// HashPassword creates a bcrypt hash of the passwordfunc HashPassword(password string) (string, error) {
+// HashPassword creates a bcrypt hash of the password
+func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", fmt.Errorf("failed to hash password: %w", err)
@@ -39,11 +43,13 @@ import (
 	return string(bytes), nil
 }
 
-// CheckPassword compares a password with a hashfunc CheckPassword(password, hash string) error {
+// CheckPassword compares a password with a hash
+func CheckPassword(password, hash string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 
-// GenerateRandomToken generates a cryptographically secure random tokenfunc GenerateRandomToken(length int) (string, error) {
+// GenerateRandomToken generates a cryptographically secure random token
+func GenerateRandomToken(length int) (string, error) {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", fmt.Errorf("failed to generate random token: %w", err)
@@ -51,17 +57,19 @@ import (
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
-// Permission constants for better type safetyconst (
-	PermRead   = "read"
-	PermWrite  = "write"
-	PermDelete = "delete"
-	PermUpdate = "update"
-	PermRefund = "refund"
+// Permission constants for better type safety
+const (
+	PermRead    = "read"
+	PermWrite   = "write"
+	PermDelete  = "delete"
+	PermUpdate  = "update"
+	PermRefund  = "refund"
 	PermApprove = "approve"
 	PermProcess = "process"
 )
 
-// Resource constantsconst (
+// Resource constants
+const (
 	ResourceCruises        = "cruises"
 	ResourceCabinTypes     = "cabin-types"
 	ResourceFacilities     = "facilities"

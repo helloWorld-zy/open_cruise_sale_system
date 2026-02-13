@@ -70,10 +70,6 @@ func (j *OrderTimeoutJob) processExpiredOrders() {
 	ctx := context.Background()
 
 	// Find expired pending orders
-	filters := repository.OrderFilters{
-		Status: domain.OrderStatusPending,
-		DateTo: time.Now().Format(time.RFC3339),
-	}
 
 	// Get all pending orders that have expired
 	orders, err := j.getExpiredOrders(ctx)
@@ -141,7 +137,7 @@ func (j *OrderTimeoutJob) cancelExpiredOrder(ctx context.Context, order *domain.
 	log.Printf("Cancelling expired order: %s (OrderNumber: %s)", order.ID, order.OrderNumber)
 
 	// Get order items
-	items, err := j.orderRepo.ListOrderItemsByOrder(ctx, order.ID)
+	items, err := j.orderRepo.ListOrderItemsByOrder(ctx, order.ID.String())
 	if err != nil {
 		return fmt.Errorf("failed to get order items: %w", err)
 	}
@@ -155,7 +151,7 @@ func (j *OrderTimeoutJob) cancelExpiredOrder(ctx context.Context, order *domain.
 	}
 
 	// Update order status to cancelled
-	if err := j.orderRepo.UpdateStatus(ctx, order.ID, domain.OrderStatusCancelled); err != nil {
+	if err := j.orderRepo.UpdateStatus(ctx, order.ID.String(), domain.OrderStatusCancelled); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -200,7 +196,9 @@ func (j *OrderTimeoutJob) publishMetrics(count int) {
 	}
 
 	data, _ := json.Marshal(metrics)
-	j.natsConn.Publish("job.metrics", data)
+	if err := j.natsConn.Publish("job.metrics", data); err != nil {
+		log.Printf("Failed to publish job metrics: %v", err)
+	}
 }
 
 // SubscribeToEvents subscribes to NATS events
