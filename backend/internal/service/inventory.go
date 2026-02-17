@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -61,6 +63,7 @@ type inventoryService struct {
 	inventoryRepo repository.InventoryRepository
 	voyageRepo    repository.VoyageRepository
 	cabinRepo     repository.CabinRepository
+	redis         *redis.Client
 }
 
 // NewInventoryService creates a new inventory service
@@ -68,11 +71,18 @@ func NewInventoryService(
 	inventoryRepo repository.InventoryRepository,
 	voyageRepo repository.VoyageRepository,
 	cabinRepo repository.CabinRepository,
+	redisClients ...*redis.Client,
 ) InventoryService {
+	var redisClient *redis.Client
+	if len(redisClients) > 0 {
+		redisClient = redisClients[0]
+	}
+
 	return &inventoryService{
 		inventoryRepo: inventoryRepo,
 		voyageRepo:    voyageRepo,
 		cabinRepo:     cabinRepo,
+		redis:         redisClient,
 	}
 }
 
@@ -109,6 +119,12 @@ func (s *inventoryService) LockCabins(ctx context.Context, voyageID, cabinTypeID
 		return ErrInvalidInventoryData
 	}
 
+	unlock, err := s.acquireInventoryLock(ctx, voyageID, cabinTypeID)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	// Check availability first
 	available, _, err := s.CheckAvailability(ctx, voyageID, cabinTypeID, quantity)
 	if err != nil {
@@ -135,7 +151,13 @@ func (s *inventoryService) UnlockCabins(ctx context.Context, voyageID, cabinType
 		return ErrInvalidInventoryData
 	}
 
-	err := s.inventoryRepo.UnlockCabin(ctx, voyageID, cabinTypeID, quantity)
+	unlock, err := s.acquireInventoryLock(ctx, voyageID, cabinTypeID)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	err = s.inventoryRepo.UnlockCabin(ctx, voyageID, cabinTypeID, quantity)
 	if err != nil {
 		return err
 	}
@@ -148,7 +170,13 @@ func (s *inventoryService) ConfirmBooking(ctx context.Context, voyageID, cabinTy
 		return ErrInvalidInventoryData
 	}
 
-	err := s.inventoryRepo.ConfirmBooking(ctx, voyageID, cabinTypeID, quantity)
+	unlock, err := s.acquireInventoryLock(ctx, voyageID, cabinTypeID)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	err = s.inventoryRepo.ConfirmBooking(ctx, voyageID, cabinTypeID, quantity)
 	if err != nil {
 		return err
 	}
@@ -161,7 +189,13 @@ func (s *inventoryService) CancelBooking(ctx context.Context, voyageID, cabinTyp
 		return ErrInvalidInventoryData
 	}
 
-	err := s.inventoryRepo.CancelBooking(ctx, voyageID, cabinTypeID, quantity)
+	unlock, err := s.acquireInventoryLock(ctx, voyageID, cabinTypeID)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	err = s.inventoryRepo.CancelBooking(ctx, voyageID, cabinTypeID, quantity)
 	if err != nil {
 		return err
 	}
@@ -202,4 +236,41 @@ func (s *inventoryService) UpdateInventory(ctx context.Context, inventory *domai
 
 	inventory.LastUpdatedAt = time.Now().Format(time.RFC3339)
 	return s.inventoryRepo.UpdateInventory(ctx, inventory)
+}
+
+func (s *inventoryService) acquireInventoryLock(ctx context.Context, voyageID, cabinTypeID string) (func(), error) {
+	if s.redis == nil {
+		return func() {}, nil
+	}
+
+	lockKey := fmt.Sprintf("lock:inventory:%s:%s:global", voyageID, cabinTypeID)
+	lockValue := uuid.New().String()
+
+	var acquired bool
+	for i := 0; i < 3; i++ {
+		ok, err := s.redis.SetNX(ctx, lockKey, lockValue, 30*time.Second).Result()
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			acquired = true
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if !acquired {
+		return nil, errors.New("system busy, please retry")
+	}
+
+	unlock := func() {
+		script := `
+		if redis.call("GET", KEYS[1]) == ARGV[1] then
+			return redis.call("DEL", KEYS[1])
+		end
+		return 0`
+		_, _ = s.redis.Eval(ctx, script, []string{lockKey}, lockValue).Result()
+	}
+
+	return unlock, nil
 }

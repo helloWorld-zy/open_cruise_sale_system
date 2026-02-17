@@ -76,7 +76,7 @@ func (r *inventoryRepository) LockCabin(ctx context.Context, voyageID, cabinType
 
 		// Update with optimistic locking
 		result := tx.Model(&domain.CabinInventory{}).
-			Where("voyage_id = ? AND cabin_type_id = ? AND lock_version = ?", voyageID, cabinTypeID, inventory.LockVersion).
+			Where("voyage_id = ? AND cabin_type_id = ? AND lock_version = ? AND available_cabins >= ?", voyageID, cabinTypeID, inventory.LockVersion, quantity).
 			Updates(map[string]interface{}{
 				"available_cabins": inventory.AvailableCabins - quantity,
 				"locked_cabins":    inventory.LockedCabins + quantity,
@@ -95,7 +95,7 @@ func (r *inventoryRepository) LockCabin(ctx context.Context, voyageID, cabinType
 func (r *inventoryRepository) UnlockCabin(ctx context.Context, voyageID, cabinTypeID string, quantity int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&domain.CabinInventory{}).
-			Where("voyage_id = ? AND cabin_type_id = ?", voyageID, cabinTypeID).
+			Where("voyage_id = ? AND cabin_type_id = ? AND locked_cabins >= ?", voyageID, cabinTypeID, quantity).
 			Updates(map[string]interface{}{
 				"available_cabins": gorm.Expr("available_cabins + ?", quantity),
 				"locked_cabins":    gorm.Expr("locked_cabins - ?", quantity),
@@ -114,7 +114,7 @@ func (r *inventoryRepository) UnlockCabin(ctx context.Context, voyageID, cabinTy
 func (r *inventoryRepository) ConfirmBooking(ctx context.Context, voyageID, cabinTypeID string, quantity int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&domain.CabinInventory{}).
-			Where("voyage_id = ? AND cabin_type_id = ?", voyageID, cabinTypeID).
+			Where("voyage_id = ? AND cabin_type_id = ? AND locked_cabins >= ?", voyageID, cabinTypeID, quantity).
 			Updates(map[string]interface{}{
 				"locked_cabins":   gorm.Expr("locked_cabins - ?", quantity),
 				"booked_cabins":   gorm.Expr("booked_cabins + ?", quantity),
@@ -133,7 +133,7 @@ func (r *inventoryRepository) ConfirmBooking(ctx context.Context, voyageID, cabi
 func (r *inventoryRepository) CancelBooking(ctx context.Context, voyageID, cabinTypeID string, quantity int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&domain.CabinInventory{}).
-			Where("voyage_id = ? AND cabin_type_id = ?", voyageID, cabinTypeID).
+			Where("voyage_id = ? AND cabin_type_id = ? AND booked_cabins >= ?", voyageID, cabinTypeID, quantity).
 			Updates(map[string]interface{}{
 				"available_cabins": gorm.Expr("available_cabins + ?", quantity),
 				"booked_cabins":    gorm.Expr("booked_cabins - ?", quantity),

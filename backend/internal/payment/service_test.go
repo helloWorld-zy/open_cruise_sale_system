@@ -2,13 +2,17 @@ package payment
 
 import (
 	"backend/internal/domain"
+	"backend/internal/pagination"
+	"backend/internal/repository"
 	"context"
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"gorm.io/gorm"
 )
 
 // Mock Order Repository for Payment
@@ -86,6 +90,153 @@ func (m *MockPaymentOrderRepository) UpdatePayment(ctx context.Context, payment 
 	return args.Error(0)
 }
 
+func (m *MockPaymentOrderRepository) List(ctx context.Context, filters repository.OrderFilters, paginator *pagination.Paginator) ([]*domain.Order, error) {
+	args := m.Called(ctx, filters, paginator)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.Order), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) Count(ctx context.Context, filters repository.OrderFilters) (int64, error) {
+	args := m.Called(ctx, filters)
+	if args.Get(0) == nil {
+		return 0, args.Error(1)
+	}
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) ListByUser(ctx context.Context, userID string, paginator *pagination.Paginator) ([]*domain.Order, error) {
+	args := m.Called(ctx, userID, paginator)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.Order), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) ListByStatus(ctx context.Context, status string, paginator *pagination.Paginator) ([]*domain.Order, error) {
+	args := m.Called(ctx, status, paginator)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.Order), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) ListByVoyage(ctx context.Context, voyageID string) ([]*domain.Order, error) {
+	args := m.Called(ctx, voyageID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.Order), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) Delete(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) CreateOrderItem(ctx context.Context, item *domain.OrderItem) error {
+	args := m.Called(ctx, item)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) GetOrderItemByID(ctx context.Context, id string) (*domain.OrderItem, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.OrderItem), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) UpdateOrderItem(ctx context.Context, item *domain.OrderItem) error {
+	args := m.Called(ctx, item)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) UpdateOrderItemStatus(ctx context.Context, id string, status string) error {
+	args := m.Called(ctx, id, status)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) DeleteOrderItem(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) CreatePassenger(ctx context.Context, passenger *domain.Passenger) error {
+	args := m.Called(ctx, passenger)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) GetPassengerByID(ctx context.Context, id string) (*domain.Passenger, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.Passenger), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) ListPassengersByOrder(ctx context.Context, orderID string) ([]*domain.Passenger, error) {
+	args := m.Called(ctx, orderID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.Passenger), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) ListPassengersByOrderItem(ctx context.Context, orderItemID string) ([]*domain.Passenger, error) {
+	args := m.Called(ctx, orderItemID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.Passenger), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) UpdatePassenger(ctx context.Context, passenger *domain.Passenger) error {
+	args := m.Called(ctx, passenger)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) DeletePassenger(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) BatchCreatePassengers(ctx context.Context, passengers []*domain.Passenger) error {
+	args := m.Called(ctx, passengers)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) CreateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error {
+	args := m.Called(ctx, refund)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) GetRefundRequestByID(ctx context.Context, id string) (*domain.RefundRequest, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.RefundRequest), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) ListRefundRequests(ctx context.Context, filters repository.RefundFilters, paginator *pagination.Paginator) ([]*domain.RefundRequest, error) {
+	args := m.Called(ctx, filters, paginator)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.RefundRequest), args.Error(1)
+}
+
+func (m *MockPaymentOrderRepository) UpdateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error {
+	args := m.Called(ctx, refund)
+	return args.Error(0)
+}
+
+func (m *MockPaymentOrderRepository) WithTransaction(ctx context.Context, fn func(repo repository.OrderRepository, tx *gorm.DB) error) error {
+	return fn(m, nil)
+}
+
 func (m *MockPaymentOrderRepository) ListOrderItemsByOrder(ctx context.Context, orderID string) ([]*domain.OrderItem, error) {
 	args := m.Called(ctx, orderID)
 	if args.Get(0) == nil {
@@ -161,7 +312,7 @@ func TestPaymentService_CreatePayment(t *testing.T) {
 
 	t.Run("should create payment for pending order", func(t *testing.T) {
 		order := &domain.Order{
-			ID:             "order-1",
+			BaseModel:      domain.BaseModel{ID: uuid.New()},
 			Status:         domain.OrderStatusPending,
 			TotalAmount:    1000,
 			DiscountAmount: 0,
@@ -191,8 +342,8 @@ func TestPaymentService_CreatePayment(t *testing.T) {
 
 	t.Run("should return error for non-pending order", func(t *testing.T) {
 		order := &domain.Order{
-			ID:     "order-1",
-			Status: domain.OrderStatusPaid,
+			BaseModel: domain.BaseModel{ID: uuid.New()},
+			Status:    domain.OrderStatusPaid,
 		}
 
 		mockOrderRepo.On("GetByID", ctx, "order-1").Return(order, nil).Once()
@@ -206,8 +357,8 @@ func TestPaymentService_CreatePayment(t *testing.T) {
 
 	t.Run("should return error for unsupported payment method", func(t *testing.T) {
 		order := &domain.Order{
-			ID:     "order-1",
-			Status: domain.OrderStatusPending,
+			BaseModel: domain.BaseModel{ID: uuid.New()},
+			Status:    domain.OrderStatusPending,
 		}
 
 		mockOrderRepo.On("GetByID", ctx, "order-1").Return(order, nil).Once()
@@ -241,7 +392,7 @@ func TestPaymentService_ProcessCallback(t *testing.T) {
 		}
 
 		payment := &domain.Payment{
-			ID:        "payment-1",
+			BaseModel: domain.BaseModel{ID: uuid.New()},
 			OrderID:   "order-1",
 			PaymentNo: "PAY20240101123456",
 			Status:    domain.PaymentStatusPending,
@@ -292,7 +443,7 @@ func TestPaymentService_QueryPayment(t *testing.T) {
 
 	t.Run("should query and update payment status", func(t *testing.T) {
 		payment := &domain.Payment{
-			ID:            "payment-1",
+			BaseModel:     domain.BaseModel{ID: uuid.New()},
 			PaymentNo:     "PAY20240101123456",
 			PaymentMethod: "wechat",
 			Status:        domain.PaymentStatusPending,
@@ -340,7 +491,7 @@ func TestPaymentService_Refund(t *testing.T) {
 
 	t.Run("should process refund for successful payment", func(t *testing.T) {
 		payment := &domain.Payment{
-			ID:            "payment-1",
+			BaseModel:     domain.BaseModel{ID: uuid.New()},
 			OrderID:       "order-1",
 			PaymentNo:     "PAY20240101123456",
 			PaymentMethod: "wechat",
@@ -369,8 +520,8 @@ func TestPaymentService_Refund(t *testing.T) {
 
 	t.Run("should return error for non-successful payment", func(t *testing.T) {
 		payment := &domain.Payment{
-			ID:     "payment-1",
-			Status: domain.PaymentStatusPending,
+			BaseModel: domain.BaseModel{ID: uuid.New()},
+			Status:    domain.PaymentStatusPending,
 		}
 
 		mockOrderRepo.On("GetPaymentByID", ctx, "payment-1").Return(payment, nil).Once()
@@ -390,14 +541,14 @@ func TestPaymentService_GetPaymentByOrder(t *testing.T) {
 
 	t.Run("should return payment by order ID", func(t *testing.T) {
 		payment := &domain.Payment{
-			ID:        "payment-1",
+			BaseModel: domain.BaseModel{ID: uuid.New()},
 			OrderID:   "order-1",
 			PaymentNo: "PAY20240101123456",
 		}
 
 		order := &domain.Order{
-			ID:       "order-1",
-			Payments: []domain.Payment{*payment},
+			BaseModel: domain.BaseModel{ID: uuid.New()},
+			Payments:  []domain.Payment{*payment},
 		}
 
 		mockOrderRepo.On("GetOrderWithDetails", ctx, "order-1").Return(order, nil).Once()
@@ -405,14 +556,14 @@ func TestPaymentService_GetPaymentByOrder(t *testing.T) {
 		result, err := service.GetPaymentByOrder(ctx, "order-1")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "payment-1", result.ID)
+		assert.Equal(t, payment.ID, result.ID)
 		mockOrderRepo.AssertExpectations(t)
 	})
 
 	t.Run("should return error when no payments found", func(t *testing.T) {
 		order := &domain.Order{
-			ID:       "order-1",
-			Payments: []domain.Payment{},
+			BaseModel: domain.BaseModel{ID: uuid.New()},
+			Payments:  []domain.Payment{},
 		}
 
 		mockOrderRepo.On("GetOrderWithDetails", ctx, "order-1").Return(order, nil).Once()

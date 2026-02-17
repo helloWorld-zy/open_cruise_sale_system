@@ -5,10 +5,9 @@ import (
 	"backend/internal/pagination"
 	"backend/internal/repository"
 	"context"
-	"errors"
 	"testing"
-	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
@@ -209,6 +208,36 @@ func (m *MockOrderRepository) GetPaymentByNo(ctx context.Context, paymentNo stri
 func (m *MockOrderRepository) UpdatePayment(ctx context.Context, payment *domain.Payment) error {
 	args := m.Called(ctx, payment)
 	return args.Error(0)
+}
+
+func (m *MockOrderRepository) CreateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error {
+	args := m.Called(ctx, refund)
+	return args.Error(0)
+}
+
+func (m *MockOrderRepository) GetRefundRequestByID(ctx context.Context, id string) (*domain.RefundRequest, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.RefundRequest), args.Error(1)
+}
+
+func (m *MockOrderRepository) ListRefundRequests(ctx context.Context, filters repository.RefundFilters, paginator *pagination.Paginator) ([]*domain.RefundRequest, error) {
+	args := m.Called(ctx, filters, paginator)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*domain.RefundRequest), args.Error(1)
+}
+
+func (m *MockOrderRepository) UpdateRefundRequest(ctx context.Context, refund *domain.RefundRequest) error {
+	args := m.Called(ctx, refund)
+	return args.Error(0)
+}
+
+func (m *MockOrderRepository) WithTransaction(ctx context.Context, fn func(repo repository.OrderRepository, tx *gorm.DB) error) error {
+	return fn(m, nil)
 }
 
 // Mock Voyage Repository
@@ -570,7 +599,7 @@ func TestOrderService_GetByID(t *testing.T) {
 
 	t.Run("should return order by ID", func(t *testing.T) {
 		order := &domain.Order{
-			ID:          "order-1",
+			BaseModel:   domain.BaseModel{ID: uuid.New()},
 			OrderNumber: "ORD202401010001",
 			Status:      domain.OrderStatusPending,
 		}
@@ -607,12 +636,13 @@ func TestOrderService_Cancel(t *testing.T) {
 
 	t.Run("should cancel pending order successfully", func(t *testing.T) {
 		order := &domain.Order{
-			ID:     "order-1",
-			Status: domain.OrderStatusPending,
+			BaseModel: domain.BaseModel{ID: uuid.New()},
+			Status:    domain.OrderStatusPending,
 		}
 
 		mockOrderRepo.On("GetByID", ctx, "order-1").Return(order, nil).Once()
-		mockOrderRepo.On("UpdateStatus", ctx, "order-1", domain.OrderStatusCancelled).Return(nil).Once()
+		mockOrderRepo.On("ListOrderItemsByOrder", ctx, order.ID.String()).Return([]*domain.OrderItem{}, nil).Once()
+		mockOrderRepo.On("UpdateStatus", ctx, order.ID.String(), domain.OrderStatusCancelled).Return(nil).Once()
 
 		err := service.Cancel(ctx, "order-1")
 
@@ -647,8 +677,8 @@ func TestOrderService_List(t *testing.T) {
 		req.Paginator = pagination.Paginator{Page: 1, PageSize: 10}
 
 		orders := []*domain.Order{
-			{ID: "order-1", Status: domain.OrderStatusPending},
-			{ID: "order-2", Status: domain.OrderStatusPending},
+			{BaseModel: domain.BaseModel{ID: uuid.New()}, Status: domain.OrderStatusPending},
+			{BaseModel: domain.BaseModel{ID: uuid.New()}, Status: domain.OrderStatusPending},
 		}
 
 		mockOrderRepo.On("Count", ctx, mock.AnythingOfType("repository.OrderFilters")).Return(int64(2), nil).Once()
@@ -675,7 +705,7 @@ func TestOrderService_Update(t *testing.T) {
 
 	t.Run("should update pending order", func(t *testing.T) {
 		order := &domain.Order{
-			ID:           "order-1",
+			BaseModel:    domain.BaseModel{ID: uuid.New()},
 			Status:       domain.OrderStatusPending,
 			ContactName:  "Old Name",
 			ContactPhone: "1234567890",
@@ -699,8 +729,8 @@ func TestOrderService_Update(t *testing.T) {
 
 	t.Run("should return error for non-pending order", func(t *testing.T) {
 		order := &domain.Order{
-			ID:     "order-1",
-			Status: domain.OrderStatusPaid,
+			BaseModel: domain.BaseModel{ID: uuid.New()},
+			Status:    domain.OrderStatusPaid,
 		}
 
 		req := UpdateOrderRequest{

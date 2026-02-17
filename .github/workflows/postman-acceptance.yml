@@ -1,0 +1,83 @@
+name: Postman Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "API base url (with /api/v1)"
+        required: true
+        default: "http://localhost:8080/api/v1"
+      skip_callback:
+        description: "Skip WeChat callback folders"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  postman:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Newman
+      run: npm install -g newman newman-reporter-junitfull
+
+    - name: Build runtime environment
+      shell: bash
+      run: |
+        cat > postman/runtime.postman_environment.json <<'JSON'
+        {
+          "id": "runtime-env",
+          "name": "Runtime",
+          "values": [
+            { "key": "baseUrl", "value": "${{ inputs.base_url }}", "enabled": true },
+            { "key": "token", "value": "${{ secrets.POSTMAN_TOKEN }}", "enabled": true },
+            { "key": "voyageId", "value": "${{ secrets.POSTMAN_VOYAGE_ID }}", "enabled": true },
+            { "key": "cruiseId", "value": "${{ secrets.POSTMAN_CRUISE_ID }}", "enabled": true },
+            { "key": "cabinId", "value": "${{ secrets.POSTMAN_CABIN_ID }}", "enabled": true },
+            { "key": "cabinTypeId", "value": "${{ secrets.POSTMAN_CABIN_TYPE_ID }}", "enabled": true },
+            { "key": "orderId", "value": "", "enabled": true },
+            { "key": "orderNumber", "value": "", "enabled": true },
+            { "key": "paymentId", "value": "", "enabled": true },
+            { "key": "paymentNo", "value": "", "enabled": true },
+            { "key": "wechatpaySignature", "value": "${{ secrets.POSTMAN_WECHATPAY_SIGNATURE }}", "enabled": true },
+            { "key": "wechatpayTimestamp", "value": "${{ secrets.POSTMAN_WECHATPAY_TIMESTAMP }}", "enabled": true },
+            { "key": "wechatpayNonce", "value": "${{ secrets.POSTMAN_WECHATPAY_NONCE }}", "enabled": true },
+            { "key": "wechatpaySerial", "value": "${{ secrets.POSTMAN_WECHATPAY_SERIAL }}", "enabled": true },
+            { "key": "wechatCallbackBody", "value": "${{ secrets.POSTMAN_WECHAT_CALLBACK_BODY }}", "enabled": true }
+          ]
+        }
+        JSON
+
+    - name: Run postman (full)
+      if: ${{ !inputs.skip_callback }}
+      run: |
+        newman run postman/CruiseBooking-Prelaunch.postman_collection.json \
+          -e postman/runtime.postman_environment.json \
+          --reporters cli,junit \
+          --reporter-junit-export postman/newman-report.xml
+
+    - name: Run postman (skip callback)
+      if: ${{ inputs.skip_callback }}
+      run: |
+        newman run postman/CruiseBooking-Prelaunch.postman_collection.json \
+          -e postman/runtime.postman_environment.json \
+          --folder "0. Health" \
+          --folder "1. Order" \
+          --folder "2. Payment" \
+          --folder "4. Order Cancel" \
+          --reporters cli,junit \
+          --reporter-junit-export postman/newman-report.xml
+
+    - name: Upload Newman report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: postman-newman-report
+        path: postman/newman-report.xml

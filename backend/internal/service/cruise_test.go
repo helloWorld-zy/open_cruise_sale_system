@@ -5,10 +5,10 @@ import (
 	"backend/internal/pagination"
 	"backend/internal/repository"
 	"context"
-	"errors"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
@@ -152,7 +152,7 @@ func TestCruiseService_GetByID(t *testing.T) {
 	t.Run("should get cruise by ID successfully", func(t *testing.T) {
 		expectedCruise := &domain.Cruise{
 			BaseModel: domain.BaseModel{
-				ID:        "cruise-1",
+				ID:        uuid.New(),
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -196,11 +196,11 @@ func TestCruiseService_List(t *testing.T) {
 
 		expectedCruises := []*domain.Cruise{
 			{
-				BaseModel: domain.BaseModel{ID: "1"},
+				BaseModel: domain.BaseModel{ID: uuid.New()},
 				NameCN:    "邮轮1",
 			},
 			{
-				BaseModel: domain.BaseModel{ID: "2"},
+				BaseModel: domain.BaseModel{ID: uuid.New()},
 				NameCN:    "邮轮2",
 			},
 		}
@@ -225,7 +225,7 @@ func TestCruiseService_Update(t *testing.T) {
 	t.Run("should update cruise successfully", func(t *testing.T) {
 		existingCruise := &domain.Cruise{
 			BaseModel: domain.BaseModel{
-				ID:        "cruise-1",
+				ID:        uuid.New(),
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -266,7 +266,7 @@ func TestCruiseService_Delete(t *testing.T) {
 
 	t.Run("should delete cruise successfully", func(t *testing.T) {
 		existingCruise := &domain.Cruise{
-			BaseModel: domain.BaseModel{ID: "cruise-1"},
+			BaseModel: domain.BaseModel{ID: uuid.New()},
 			NameCN:    "测试邮轮",
 		}
 
@@ -295,7 +295,7 @@ func TestCruiseService_UpdateStatus(t *testing.T) {
 
 	t.Run("should update status successfully", func(t *testing.T) {
 		existingCruise := &domain.Cruise{
-			BaseModel: domain.BaseModel{ID: "cruise-1"},
+			BaseModel: domain.BaseModel{ID: uuid.New()},
 			Status:    domain.CruiseStatusActive,
 		}
 

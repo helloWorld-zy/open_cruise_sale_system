@@ -72,8 +72,11 @@ func (o *Order) IsExpired() bool {
 	if o.ExpiresAt == "" {
 		return false
 	}
-	// Simple string comparison works for RFC3339 format
-	return o.ExpiresAt < time.Now().Format(time.RFC3339)
+	expiresAt, err := time.Parse(time.RFC3339, o.ExpiresAt)
+	if err != nil {
+		return false
+	}
+	return time.Now().UTC().After(expiresAt)
 }
 
 // OrderItem represents a line item in an order

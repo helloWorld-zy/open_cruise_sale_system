@@ -1,0 +1,379 @@
+{
+  "info": {
+    "name": "CruiseBooking Prelaunch Acceptance",
+    "_postman_id": "b8b9f8e9-2d58-4a4e-a4f3-0d6cf39c1f3f",
+    "description": "上线前验收集合：覆盖健康检查、下单、支付、回调重放与订单查询。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Health",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Order",
+      "item": [
+        {
+          "name": "POST Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"voyage_id\": \"{{voyageId}}\",\n  \"cruise_id\": \"{{cruiseId}}\",\n  \"items\": [\n    {\n      \"cabin_id\": \"{{cabinId}}\",\n      \"cabin_type_id\": \"{{cabinTypeId}}\",\n      \"adult_count\": 2,\n      \"child_count\": 0,\n      \"infant_count\": 0\n    }\n  ],\n  \"passengers\": [\n    {\n      \"name\": \"Ming\",\n      \"surname\": \"Li\",\n      \"gender\": \"male\",\n      \"birth_date\": \"1990-01-01\",\n      \"passenger_type\": \"adult\"\n    },\n    {\n      \"name\": \"Lei\",\n      \"surname\": \"Wang\",\n      \"gender\": \"female\",\n      \"birth_date\": \"1992-01-01\",\n      \"passenger_type\": \"adult\"\n    }\n  ],\n  \"contact_name\": \"Test User\",\n  \"contact_phone\": \"13800000000\",\n  \"contact_email\": \"test@example.com\",\n  \"remark\": \"postman acceptance\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 2xx', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "var data = json.data || {};",
+                  "if (data.id) pm.environment.set('orderId', data.id);",
+                  "if (data.order_number) pm.environment.set('orderNumber', data.order_number);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/my?page=1&page_size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "my"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Order Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}/detail",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}",
+                "detail"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Payment",
+      "item": [
+        {
+          "name": "POST Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{orderId}}\",\n  \"method\": \"wechat\",\n  \"description\": \"prelaunch acceptance payment\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 2xx', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "var data = json.data || {};",
+                  "if (data.id) pm.environment.set('paymentId', data.id);",
+                  "if (data.payment_no) pm.environment.set('paymentNo', data.payment_no);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Payment By Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payments/order/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "order",
+                "{{orderId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. WeChat Callback",
+      "item": [
+        {
+          "name": "POST Callback First Time",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Wechatpay-Signature",
+                "value": "{{wechatpaySignature}}",
+                "type": "text"
+              },
+              {
+                "key": "Wechatpay-Timestamp",
+                "value": "{{wechatpayTimestamp}}",
+                "type": "text"
+              },
+              {
+                "key": "Wechatpay-Nonce",
+                "value": "{{wechatpayNonce}}",
+                "type": "text"
+              },
+              {
+                "key": "Wechatpay-Serial",
+                "value": "{{wechatpaySerial}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{wechatCallbackBody}}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/callback/wechat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "callback",
+                "wechat"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('callback accepted', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "  pm.expect(pm.response.text()).to.include('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Callback Replay (Same Packet)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Wechatpay-Signature",
+                "value": "{{wechatpaySignature}}",
+                "type": "text"
+              },
+              {
+                "key": "Wechatpay-Timestamp",
+                "value": "{{wechatpayTimestamp}}",
+                "type": "text"
+              },
+              {
+                "key": "Wechatpay-Nonce",
+                "value": "{{wechatpayNonce}}",
+                "type": "text"
+              },
+              {
+                "key": "Wechatpay-Serial",
+                "value": "{{wechatpaySerial}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{wechatCallbackBody}}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/callback/wechat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "callback",
+                "wechat"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Order Cancel",
+      "item": [
+        {
+          "name": "POST Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    }
+  ]
+}

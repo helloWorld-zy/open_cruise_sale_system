@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
 
 var (
@@ -152,6 +154,7 @@ type orderService struct {
 	priceRepo     repository.PriceRepository
 	inventoryRepo repository.InventoryRepository
 	stateService  OrderStateService
+	redis         *redis.Client
 }
 
 // NewOrderService creates a new order service
@@ -161,8 +164,13 @@ func NewOrderService(
 	cabinRepo repository.CabinRepository,
 	priceRepo repository.PriceRepository,
 	inventoryRepo repository.InventoryRepository,
+	redisClients ...*redis.Client,
 ) OrderService {
 	stateService := NewOrderStateService(orderRepo, inventoryRepo)
+	var redisClient *redis.Client
+	if len(redisClients) > 0 {
+		redisClient = redisClients[0]
+	}
 	return &orderService{
 		orderRepo:     orderRepo,
 		voyageRepo:    voyageRepo,
@@ -170,6 +178,7 @@ func NewOrderService(
 		priceRepo:     priceRepo,
 		inventoryRepo: inventoryRepo,
 		stateService:  stateService,
+		redis:         redisClient,
 	}
 }
 
@@ -245,7 +254,9 @@ func (s *orderService) Create(ctx context.Context, req CreateOrderRequest) (*dom
 	}
 
 	// DD-001: Wrap entire order creation in a database transaction
-	err = s.orderRepo.WithTransaction(ctx, func(txRepo repository.OrderRepository) error {
+	err = s.orderRepo.WithTransaction(ctx, func(txRepo repository.OrderRepository, tx *gorm.DB) error {
+		txInventoryRepo := repository.NewInventoryRepository(tx)
+
 		// Create order
 		if err := txRepo.Create(ctx, order); err != nil {
 			return fmt.Errorf("failed to create order: %w", err)
@@ -256,6 +267,12 @@ func (s *orderService) Create(ctx context.Context, req CreateOrderRequest) (*dom
 
 		// Process each item and lock inventory
 		for _, itemReq := range req.Items {
+			unlock, err := s.acquireInventoryLock(ctx, req.VoyageID, itemReq.CabinTypeID, order.ID.String())
+			if err != nil {
+				return fmt.Errorf("failed to acquire inventory lock: %w", err)
+			}
+			defer unlock()
+
 			// Get cabin
 			cabin, err := s.cabinRepo.GetByID(ctx, itemReq.CabinID)
 			if err != nil {
@@ -273,7 +290,7 @@ func (s *orderService) Create(ctx context.Context, req CreateOrderRequest) (*dom
 			}
 
 			// Lock inventory
-			if err := s.inventoryRepo.LockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1); err != nil {
+			if err := txInventoryRepo.LockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1); err != nil {
 				return fmt.Errorf("failed to lock cabin: %w", err)
 			}
 
@@ -300,8 +317,8 @@ func (s *orderService) Create(ctx context.Context, req CreateOrderRequest) (*dom
 			}
 
 			if err := txRepo.CreateOrderItem(ctx, orderItem); err != nil {
-				// Transaction will auto-rollback; also unlock inventory
-				s.inventoryRepo.UnlockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1)
+				// Transaction will auto-rollback; attempt unlock for extra safety
+				_ = txInventoryRepo.UnlockCabin(ctx, req.VoyageID, itemReq.CabinTypeID, 1)
 				return fmt.Errorf("failed to create order item: %w", err)
 			}
 
@@ -534,4 +551,41 @@ func (s *orderService) CalculateTotal(ctx context.Context, items []OrderItemRequ
 
 func generateOrderNumber() string {
 	return fmt.Sprintf("ORD%s%s", time.Now().Format("20060102"), uuid.New().String()[:8])
+}
+
+func (s *orderService) acquireInventoryLock(ctx context.Context, voyageID, cabinTypeID, orderID string) (func(), error) {
+	if s.redis == nil {
+		return func() {}, nil
+	}
+
+	lockKey := fmt.Sprintf("lock:inventory:%s:%s:%s", voyageID, cabinTypeID, orderID)
+	lockValue := uuid.New().String()
+
+	var acquired bool
+	for i := 0; i < 3; i++ {
+		ok, err := s.redis.SetNX(ctx, lockKey, lockValue, 30*time.Second).Result()
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			acquired = true
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if !acquired {
+		return nil, errors.New("inventory lock timeout")
+	}
+
+	unlock := func() {
+		script := `
+		if redis.call("GET", KEYS[1]) == ARGV[1] then
+			return redis.call("DEL", KEYS[1])
+		end
+		return 0`
+		_, _ = s.redis.Eval(ctx, script, []string{lockKey}, lockValue).Result()
+	}
+
+	return unlock, nil
 }

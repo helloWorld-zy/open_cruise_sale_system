@@ -118,15 +118,15 @@ func (j *OrderTimeoutJob) getExpiredOrders(ctx context.Context) ([]*domain.Order
 // isOrderExpired checks if an order is expired
 func (j *OrderTimeoutJob) isOrderExpired(order *domain.Order, now time.Time) bool {
 	if order.ExpiresAt == "" {
-		// Default expiration: 30 minutes after creation
+		// Default expiration: 15 minutes after creation
 		createdAt := order.CreatedAt
-		return now.Sub(createdAt) > 30*time.Minute
+		return now.Sub(createdAt) > 15*time.Minute
 	}
 
 	expiresAt, err := time.Parse(time.RFC3339, order.ExpiresAt)
 	if err != nil {
 		// If parsing fails, use default expiration
-		return now.Sub(order.CreatedAt) > 30*time.Minute
+		return now.Sub(order.CreatedAt) > 15*time.Minute
 	}
 
 	return now.After(expiresAt)

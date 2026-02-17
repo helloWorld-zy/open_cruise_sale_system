@@ -3,8 +3,11 @@ package handler
 import (
 	"backend/internal/payment"
 	"backend/internal/response"
+	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -72,13 +75,39 @@ func (h *PaymentHandler) WechatCallback(c *gin.Context) {
 
 	// Get signature from headers
 	signature := c.GetHeader("Wechatpay-Signature")
-	if signature == "" {
+	timestamp := c.GetHeader("Wechatpay-Timestamp")
+	nonce := c.GetHeader("Wechatpay-Nonce")
+	serial := c.GetHeader("Wechatpay-Serial")
+
+	if signature == "" || timestamp == "" || nonce == "" || serial == "" {
+		c.String(http.StatusBadRequest, "fail")
+		return
+	}
+
+	ts, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		c.String(http.StatusBadRequest, "fail")
+		return
+	}
+
+	if delta := time.Now().Unix() - ts; delta > 300 || delta < -300 {
+		c.String(http.StatusBadRequest, "fail")
+		return
+	}
+
+	meta, err := json.Marshal(gin.H{
+		"signature": signature,
+		"timestamp": timestamp,
+		"nonce":     nonce,
+		"serial":    serial,
+	})
+	if err != nil {
 		c.String(http.StatusBadRequest, "fail")
 		return
 	}
 
 	// Process callback
-	if err := h.service.ProcessCallback(c.Request.Context(), "wechat", body, signature); err != nil {
+	if err := h.service.ProcessCallback(c.Request.Context(), "wechat", body, string(meta)); err != nil {
 		c.String(http.StatusBadRequest, "fail")
 		return
 	}

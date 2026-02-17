@@ -4,15 +4,23 @@ import (
 	"backend/internal/domain"
 	"backend/internal/repository"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math"
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/redis/go-redis/v9"
 )
 
 // PaymentService provides high-level payment operations
 type PaymentService interface {
+	// RegisterProvider registers a payment provider implementation
+	RegisterProvider(name string, provider PaymentProvider)
+
 	// CreatePayment creates a payment for an order
 	CreatePayment(ctx context.Context, orderID string, method string, description string) (*domain.Payment, error)
 
@@ -34,14 +42,21 @@ type paymentService struct {
 	orderRepo repository.OrderRepository
 	providers map[string]PaymentProvider
 	natsConn  *nats.Conn
+	redis     *redis.Client
 }
 
 // NewPaymentService creates a new payment service
-func NewPaymentService(orderRepo repository.OrderRepository, natsConn *nats.Conn) PaymentService {
+func NewPaymentService(orderRepo repository.OrderRepository, natsConn *nats.Conn, redisClients ...*redis.Client) PaymentService {
+	var redisClient *redis.Client
+	if len(redisClients) > 0 {
+		redisClient = redisClients[0]
+	}
+
 	return &paymentService{
 		orderRepo: orderRepo,
 		providers: make(map[string]PaymentProvider),
 		natsConn:  natsConn,
+		redis:     redisClient,
 	}
 }
 
@@ -104,11 +119,29 @@ func (s *paymentService) ProcessCallback(ctx context.Context, provider string, b
 		return fmt.Errorf("payment not found: %w", err)
 	}
 
+	// SEC-004/FR-035: Strict amount verification before any state changes
+	if toCents(result.Amount) != toCents(payment.Amount) {
+		return fmt.Errorf("payment amount mismatch: callback=%0.2f order=%0.2f", result.Amount, payment.Amount)
+	}
+
 	// SEC-004: Idempotency check - skip if payment is already in terminal state
 	if payment.Status == domain.PaymentStatusSuccess ||
 		payment.Status == domain.PaymentStatusRefunded {
 		// Payment already processed, skip duplicate callback
 		return nil
+	}
+
+	if s.redis != nil {
+		idempotencyKey := buildIdempotencyValue(payment.OrderID, payment.PaymentMethod, result.PaidAt, result.ThirdPartyID)
+		redisKey := fmt.Sprintf("payment:idempotent:%s", payment.OrderID)
+
+		ok, redisErr := s.redis.SetNX(ctx, redisKey, idempotencyKey, 24*time.Hour).Result()
+		if redisErr != nil {
+			return fmt.Errorf("failed to check idempotency key: %w", redisErr)
+		}
+		if !ok {
+			return nil
+		}
 	}
 
 	// Update payment status
@@ -251,7 +284,16 @@ func (s *paymentService) publishPaymentEvent(eventType string, payment *domain.P
 
 	data, _ := json.Marshal(event)
 	if err := s.natsConn.Publish(eventType, data); err != nil {
-		// Log but don't fail - the payment is already processed
-		fmt.Printf("[WARN] Failed to publish payment event %s: %v\n", eventType, err)
+		log.Printf("[WARN] Failed to publish payment event %s: %v", eventType, err)
 	}
+}
+
+func toCents(amount float64) int64 {
+	return int64(math.Round(amount * 100))
+}
+
+func buildIdempotencyValue(orderID, paymentMethod, paidAt, nonce string) string {
+	payload := fmt.Sprintf("%s:%s:%s:%s", orderID, paymentMethod, paidAt, nonce)
+	hash := sha256.Sum256([]byte(payload))
+	return hex.EncodeToString(hash[:])
 }

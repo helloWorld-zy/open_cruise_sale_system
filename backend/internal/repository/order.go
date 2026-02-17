@@ -74,7 +74,7 @@ type OrderRepository interface {
 	RefundRepository
 
 	// DD-004: Transaction support for atomic operations
-	WithTransaction(ctx context.Context, fn func(repo OrderRepository) error) error
+	WithTransaction(ctx context.Context, fn func(repo OrderRepository, tx *gorm.DB) error) error
 }
 
 // RefundFilters represents filters for refund queries
@@ -110,10 +110,10 @@ func NewOrderRepository(db *gorm.DB) OrderRepository {
 
 // WithTransaction executes fn within a database transaction
 // DD-004: Ensures atomic operations for multi-step processes like order creation
-func (r *orderRepository) WithTransaction(ctx context.Context, fn func(repo OrderRepository) error) error {
+func (r *orderRepository) WithTransaction(ctx context.Context, fn func(repo OrderRepository, tx *gorm.DB) error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		txRepo := &orderRepository{db: tx}
-		return fn(txRepo)
+		return fn(txRepo, tx)
 	})
 }
 

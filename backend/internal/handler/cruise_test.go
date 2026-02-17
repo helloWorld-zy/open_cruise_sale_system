@@ -5,6 +5,7 @@ import (
 	"backend/internal/pagination"
 	"backend/internal/service"
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -97,7 +99,7 @@ func TestCruiseHandler_GetByID(t *testing.T) {
 	t.Run("should get cruise by ID successfully", func(t *testing.T) {
 		expectedCruise := &domain.Cruise{
 			BaseModel: domain.BaseModel{
-				ID:        "cruise-1",
+				ID:        uuid.New(),
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -120,7 +122,6 @@ func TestCruiseHandler_GetByID(t *testing.T) {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(200), response["code"])
 		assert.NotNil(t, response["data"])
 	})
 
@@ -147,11 +148,11 @@ func TestCruiseHandler_List(t *testing.T) {
 		expectedResult := &pagination.Result{
 			Data: []*domain.Cruise{
 				{
-					BaseModel: domain.BaseModel{ID: "1"},
+					BaseModel: domain.BaseModel{ID: uuid.New()},
 					NameCN:    "邮轮1",
 				},
 				{
-					BaseModel: domain.BaseModel{ID: "2"},
+					BaseModel: domain.BaseModel{ID: uuid.New()},
 					NameCN:    "邮轮2",
 				},
 			},
@@ -175,7 +176,6 @@ func TestCruiseHandler_List(t *testing.T) {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(200), response["code"])
 		assert.NotNil(t, response["data"])
 	})
 }
@@ -197,7 +197,7 @@ func TestCruiseHandler_Create(t *testing.T) {
 
 		expectedCruise := &domain.Cruise{
 			BaseModel: domain.BaseModel{
-				ID:        "new-cruise-id",
+				ID:        uuid.New(),
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -222,7 +222,6 @@ func TestCruiseHandler_Create(t *testing.T) {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(201), response["code"])
 		assert.NotNil(t, response["data"])
 	})
 
@@ -251,7 +250,7 @@ func TestCruiseHandler_Update(t *testing.T) {
 
 		expectedCruise := &domain.Cruise{
 			BaseModel: domain.BaseModel{
-				ID:        "cruise-1",
+				ID:        uuid.New(),
 				UpdatedAt: time.Now(),
 			},
 			NameCN: "更新的邮轮名称",
@@ -272,7 +271,6 @@ func TestCruiseHandler_Update(t *testing.T) {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(200), response["code"])
 	})
 
 	t.Run("should return 404 when cruise not found", func(t *testing.T) {

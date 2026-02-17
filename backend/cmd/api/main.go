@@ -4,6 +4,7 @@ import (
 	"backend/internal/config"
 	"backend/internal/database"
 	"backend/internal/logger"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,8 +57,9 @@ func main() {
 	// But main.go was truncated in previous view.
 	// Let's assume standard setupRoutes logic.
 
-	l.Info("Server starting on port 8080")
-	if err := r.Run(":8080"); err != nil {
+	addr := fmt.Sprintf(":%d", cfg.Server.Port)
+	l.Infow("Server starting", "addr", addr)
+	if err := r.Run(addr); err != nil {
 		l.Fatalw("Failed to start server", "error", err)
 	}
 }

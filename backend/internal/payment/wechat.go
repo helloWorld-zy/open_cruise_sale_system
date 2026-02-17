@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -108,14 +109,21 @@ type wechatPay struct {
 	config      WechatPayConfig
 	client      *http.Client
 	paymentRepo repository.OrderRepository
+	redis       *redis.Client
 }
 
 // NewWechatPay creates a new WeChat Pay provider
-func NewWechatPay(config WechatPayConfig, paymentRepo repository.OrderRepository) PaymentProvider {
+func NewWechatPay(config WechatPayConfig, paymentRepo repository.OrderRepository, redisClients ...*redis.Client) PaymentProvider {
+	var redisClient *redis.Client
+	if len(redisClients) > 0 {
+		redisClient = redisClients[0]
+	}
+
 	return &wechatPay{
 		config:      config,
 		client:      &http.Client{Timeout: 30 * time.Second},
 		paymentRepo: paymentRepo,
+		redis:       redisClient,
 	}
 }
 
@@ -202,8 +210,31 @@ func (w *wechatPay) QueryPayment(ctx context.Context, paymentNo string) (*Paymen
 
 // ProcessCallback processes WeChat Pay notification
 func (w *wechatPay) ProcessCallback(ctx context.Context, body []byte, signature string) (*CallbackResult, error) {
+	var meta struct {
+		Signature string `json:"signature"`
+		Timestamp string `json:"timestamp"`
+		Nonce     string `json:"nonce"`
+		Serial    string `json:"serial"`
+	}
+
+	if err := json.Unmarshal([]byte(signature), &meta); err != nil {
+		return nil, fmt.Errorf("invalid callback metadata: %w", err)
+	}
+
+	if meta.Signature == "" || meta.Timestamp == "" || meta.Nonce == "" || meta.Serial == "" {
+		return nil, ErrInvalidSignature
+	}
+
+	if w.config.SerialNo != "" && meta.Serial != w.config.SerialNo {
+		return nil, ErrInvalidSignature
+	}
+
+	if !w.consumeNonce(ctx, meta.Nonce) {
+		return nil, ErrInvalidSignature
+	}
+
 	// Verify signature
-	if !w.VerifySignature(body, signature) {
+	if !w.VerifySignatureWithContext(body, meta.Signature, meta.Timestamp, meta.Nonce) {
 		return nil, ErrInvalidSignature
 	}
 
@@ -273,6 +304,10 @@ func (w *wechatPay) ProcessCallback(ctx context.Context, body []byte, signature 
 
 // VerifySignature verifies WeChat Pay callback signature
 func (w *wechatPay) VerifySignature(body []byte, signature string) bool {
+	return w.VerifySignatureWithContext(body, signature, "", "")
+}
+
+func (w *wechatPay) VerifySignatureWithContext(body []byte, signature string, timestamp string, nonce string) bool {
 	// Parse certificate
 	block, _ := pem.Decode([]byte(w.config.Certificate))
 	if block == nil {
@@ -290,9 +325,18 @@ func (w *wechatPay) VerifySignature(body []byte, signature string) bool {
 		return false
 	}
 
-	// Verify
-	hash := sha256.Sum256(body)
-	err = rsa.VerifyPKCS1v15(cert.PublicKey.(*rsa.PublicKey), crypto.SHA256, hash[:], sig)
+	publicKey, ok := cert.PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return false
+	}
+
+	message := string(body)
+	if timestamp != "" && nonce != "" {
+		message = fmt.Sprintf("%s\n%s\n%s\n", timestamp, nonce, string(body))
+	}
+
+	hash := sha256.Sum256([]byte(message))
+	err = rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], sig)
 	return err == nil
 }
 
@@ -472,4 +516,17 @@ func generateRefundNo() string {
 
 func generateNonceStr() string {
 	return uuid.New().String()[:32]
+}
+
+func (w *wechatPay) consumeNonce(ctx context.Context, nonce string) bool {
+	if w.redis == nil {
+		return true
+	}
+
+	key := fmt.Sprintf("wechat:callback:nonce:%s", nonce)
+	ok, err := w.redis.SetNX(ctx, key, "1", 10*time.Minute).Result()
+	if err != nil {
+		return false
+	}
+	return ok
 }

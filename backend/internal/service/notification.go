@@ -325,7 +325,7 @@ func (s *notificationService) SendOrderCreatedNotification(ctx context.Context, 
 		UserID:  userID,
 		Type:    domain.NotificationTypeOrder,
 		Title:   "订单已创建",
-		Content: fmt.Sprintf("您的订单 %s 已创建，请在30分钟内完成支付。", order.OrderNumber),
+		Content: fmt.Sprintf("您的订单 %s 已创建，请在15分钟内完成支付。", order.OrderNumber),
 		Data: &domain.NotificationData{
 			OrderID:  &orderID,
 			OrderNo:  order.OrderNumber,

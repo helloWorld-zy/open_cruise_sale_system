@@ -89,9 +89,17 @@ func (h *OrderQueryHandler) GetOrderDetail(c *gin.Context) {
 
 	// Check permission - only order owner or admin can view
 	if order.UserID != nil && *order.UserID != userID.(string) {
-		// TODO: Check if user is admin
-		response.Forbidden(c, "无权查看此订单")
-		return
+		role, hasRole := c.Get("role")
+		if !hasRole {
+			response.Forbidden(c, "无权查看此订单")
+			return
+		}
+
+		roleStr, ok := role.(string)
+		if !ok || (roleStr != "super_admin" && roleStr != "operations" && roleStr != "finance" && roleStr != "customer_service") {
+			response.Forbidden(c, "无权查看此订单")
+			return
+		}
 	}
 
 	response.Success(c, order)
